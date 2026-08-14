@@ -82,6 +82,13 @@ Un libro può stare in **più categorie** insieme: alcuni titoli dell'elenco ini
 esempio, sono sia in *«In attesa di nuove uscite»* sia in *«Preferiti finiti»*.
 Eliminando una categoria i libri restano, perdono solo quell'etichetta.
 
+**Ordine delle categorie**: trascina la maniglia ⠿ a sinistra di ogni riga per spostarla
+in su o in giù. L'ordine scelto vale ovunque — chip in alto, pannello dei filtri, elenco
+nella scheda del libro — e resta salvato. Toccando invece la riga si apre la modifica.
+Il trascinamento usa i Pointer Events (non il drag & drop HTML5, che sui browser mobili
+non funziona) e la maniglia ha `touch-action: none`, così il dito sposta la riga senza far
+scorrere il pannello; avvicinandosi al bordo la lista scorre da sola.
+
 ### Backup
 
 I dati vivono solo su questo telefono: se lo cambi o cancelli i dati del browser, spariscono.

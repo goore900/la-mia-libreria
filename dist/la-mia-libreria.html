@@ -331,8 +331,18 @@ select.input{appearance:none;
 
 /* categorie */
 .catlist{display:flex;flex-direction:column;gap:9px}
-.catrow{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:var(--r-m);
-  background:var(--bianco);border:1px solid var(--bordo);box-shadow:var(--ombra-s)}
+.catrow{display:flex;align-items:center;gap:11px;padding:11px 13px 11px 6px;border-radius:var(--r-m);
+  background:var(--bianco);border:1px solid var(--bordo);box-shadow:var(--ombra-s);
+  will-change:transform}
+.catrow__grip{flex:none;width:30px;height:40px;display:grid;place-items:center;
+  color:var(--bordo-forte);touch-action:none;cursor:grab;border-radius:var(--r-s)}
+.catrow__grip:active{cursor:grabbing;color:var(--lilla-500);background:var(--lilla-50)}
+.catrow.is-dragging{position:relative;z-index:6;cursor:grabbing;
+  border-color:var(--lilla-300);box-shadow:var(--ombra-l);transform-origin:50% 50%}
+.catrow.is-dragging .catrow__grip{color:var(--lilla-500)}
+body.is-sorting{user-select:none;-webkit-user-select:none}
+body.is-sorting .catrow:not(.is-dragging){opacity:.75}
+.hint--top{margin:0 2px 14px}
 .catrow__dot{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex:none;color:var(--testo)}
 .catrow__dot .icon{width:19px;height:19px}
 .catrow__name{flex:1;font-weight:800;font-size:14.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -456,6 +466,7 @@ select.input{appearance:none;
   <symbol id="i-eye" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.9"/></g></symbol>
   <symbol id="i-eye-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 4l16 16"/><path d="M9.6 5.9A9.4 9.4 0 0 1 12 5.8c6 0 9.5 6.2 9.5 6.2a17 17 0 0 1-3.3 4M6.4 8.1A16.6 16.6 0 0 0 2.5 12S6 18.2 12 18.2c1.2 0 2.3-.2 3.3-.6"/><path d="M10 10a2.9 2.9 0 0 0 4 4"/></g></symbol>
   <symbol id="i-palette" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3.5a8.5 8.5 0 0 0 0 17c1.3 0 2-.9 2-1.9 0-1.6-1.2-1.9-1.2-3 0-.9.7-1.6 1.7-1.6h1.6a4.4 4.4 0 0 0 4.4-4.4c0-3.4-3.6-6.1-8.5-6.1z"/><circle cx="8" cy="10" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="7.6" r="1.1" fill="currentColor" stroke="none"/><circle cx="16" cy="9.6" r="1.1" fill="currentColor" stroke="none"/></g></symbol>
+  <symbol id="i-grip" viewBox="0 0 24 24"><g fill="currentColor"><circle cx="9" cy="6" r="1.55"/><circle cx="15" cy="6" r="1.55"/><circle cx="9" cy="12" r="1.55"/><circle cx="15" cy="12" r="1.55"/><circle cx="9" cy="18" r="1.55"/><circle cx="15" cy="18" r="1.55"/></g></symbol>
   <symbol id="i-tag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3.5 11.4V4.5a1 1 0 0 1 1-1h6.9c.3 0 .5.1.7.3l8.1 8.1a1 1 0 0 1 0 1.4l-6.9 6.9a1 1 0 0 1-1.4 0L3.8 12.1a1 1 0 0 1-.3-.7z"/><circle cx="8" cy="8" r="1.4"/></g></symbol>
 </svg>
 
@@ -671,6 +682,8 @@ select.input{appearance:none;
       <button class="icon-btn" data-close aria-label="Chiudi"><svg class="icon"><use href="#i-x"/></svg></button>
     </div>
     <div class="sheet__body">
+      <p class="hint hint--top">Trascina la maniglia per cambiare l'ordine delle categorie:
+        vale ovunque, dai chip in alto ai filtri.</p>
       <div class="catlist" id="catList"></div>
     </div>
     <div class="sheet__foot">
@@ -1409,6 +1422,8 @@ function renderCatList() {
   $('#catList').innerHTML = state.cats.map(c => {
     const n = state.books.filter(b => b.cats.includes(c.id)).length;
     return `<div class="catrow" data-cat="${c.id}">
+      <span class="catrow__grip" data-grip role="button" tabindex="-1"
+            aria-label="Trascina per riordinare">${icon('grip')}</span>
       <span class="catrow__dot" style="background:${esc(c.color)}">${icon(c.icon)}</span>
       <span class="catrow__name">${esc(c.name)}</span>
       <span class="catrow__n">${n}</span>
@@ -1416,6 +1431,81 @@ function renderCatList() {
     </div>`;
   }).join('') || `<p class="hint">Nessuna categoria: creane una qui sotto.</p>`;
 }
+/* ---- riordino delle categorie trascinando la maniglia ----
+   Pointer Events invece del drag&drop HTML5, che sui browser mobili non funziona.
+   La maniglia ha touch-action:none, così il dito trascina la riga e non scorre la pagina. */
+let drag = null, dragEndedAt = 0;
+function wireCatDrag() {
+  const list = $('#catList');
+  const rowsAround = row => [row.previousElementSibling, row.nextElementSibling];
+  const midOf = el => { const r = el.getBoundingClientRect(); return r.top + r.height / 2; };
+
+  const autoScroll = () => {
+    if (!drag) return;
+    const box = drag.scroller.getBoundingClientRect();
+    const margin = 56, speed = 9;
+    if (drag.y < box.top + margin) drag.scroller.scrollTop -= speed;
+    else if (drag.y > box.bottom - margin) drag.scroller.scrollTop += speed;
+    drag.raf = requestAnimationFrame(autoScroll);
+  };
+
+  list.addEventListener('pointerdown', e => {
+    const grip = e.target.closest('[data-grip]');
+    if (!grip || e.button > 0) return;
+    const row = grip.closest('.catrow');
+    if (!row || list.children.length < 2) return;
+    e.preventDefault();
+    grip.setPointerCapture(e.pointerId);
+    drag = { row, grip, id: e.pointerId, startY: e.clientY, y: e.clientY, moved: false, raf: 0,
+             scroller: list.closest('.sheet__body') };
+    row.classList.add('is-dragging');
+    document.body.classList.add('is-sorting');
+    drag.raf = requestAnimationFrame(autoScroll);
+  });
+
+  list.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    drag.y = e.clientY;
+    const dy = e.clientY - drag.startY;
+    if (Math.abs(dy) > 4) drag.moved = true;
+    drag.row.style.transform = `translateY(${dy}px)`;
+
+    // superato il centro del vicino, la riga prende il suo posto
+    const mid = midOf(drag.row);
+    const [prev, next] = rowsAround(drag.row);
+    const wasAt = drag.row.getBoundingClientRect().top;
+    let swapped = false;
+    if (prev && mid < midOf(prev)) { list.insertBefore(drag.row, prev); swapped = true; }
+    else if (next && mid > midOf(next)) { list.insertBefore(next, drag.row); swapped = true; }
+    if (swapped) {
+      // lo scambio sposta la riga nel layout: correggo l'origine così resta
+      // ferma sotto il dito e il trascinamento prosegue senza scatti
+      const shift = drag.row.getBoundingClientRect().top - wasAt;
+      drag.startY += shift;
+      drag.row.style.transform = `translateY(${e.clientY - drag.startY}px)`;
+    }
+  });
+
+  const end = e => {
+    if (!drag || (e && e.pointerId !== drag.id)) return;
+    cancelAnimationFrame(drag.raf);
+    drag.row.style.transform = '';
+    drag.row.classList.remove('is-dragging');
+    document.body.classList.remove('is-sorting');
+    const moved = drag.moved;
+    drag = null;
+    if (!moved) return;
+    dragEndedAt = Date.now();
+    const order = $$('.catrow', list).map(r => r.dataset.cat);
+    state.cats.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+    persist();
+    renderCatList();
+    render();          // chip in alto e filtri seguono il nuovo ordine
+  };
+  list.addEventListener('pointerup', end);
+  list.addEventListener('pointercancel', end);
+}
+
 function hslToHex(h, s, l) {
   s /= 100; l /= 100;
   const k = n => (n + h / 30) % 12;
@@ -1625,9 +1715,11 @@ function wire() {
   $('#btnCategories').addEventListener('click', () => { renderCatList(); openSheet('sheetCats'); });
   $('#catAdd').addEventListener('click', () => openCat(null));
   $('#catList').addEventListener('click', e => {
+    if (e.target.closest('[data-grip]') || Date.now() - dragEndedAt < 300) return;
     const row = e.target.closest('[data-cat]'); if (!row) return;
     openCat(row.dataset.cat);
   });
+  wireCatDrag();
   $('#catSwatches').addEventListener('click', e => {
     const b = e.target.closest('[data-color]'); if (!b) return;
     state.editingCat.color = b.dataset.color; renderCatEditor();

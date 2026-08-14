@@ -457,6 +457,8 @@ function renderCatList() {
   $('#catList').innerHTML = state.cats.map(c => {
     const n = state.books.filter(b => b.cats.includes(c.id)).length;
     return `<div class="catrow" data-cat="${c.id}">
+      <span class="catrow__grip" data-grip role="button" tabindex="-1"
+            aria-label="Trascina per riordinare">${icon('grip')}</span>
       <span class="catrow__dot" style="background:${esc(c.color)}">${icon(c.icon)}</span>
       <span class="catrow__name">${esc(c.name)}</span>
       <span class="catrow__n">${n}</span>
@@ -464,6 +466,81 @@ function renderCatList() {
     </div>`;
   }).join('') || `<p class="hint">Nessuna categoria: creane una qui sotto.</p>`;
 }
+/* ---- riordino delle categorie trascinando la maniglia ----
+   Pointer Events invece del drag&drop HTML5, che sui browser mobili non funziona.
+   La maniglia ha touch-action:none, così il dito trascina la riga e non scorre la pagina. */
+let drag = null, dragEndedAt = 0;
+function wireCatDrag() {
+  const list = $('#catList');
+  const rowsAround = row => [row.previousElementSibling, row.nextElementSibling];
+  const midOf = el => { const r = el.getBoundingClientRect(); return r.top + r.height / 2; };
+
+  const autoScroll = () => {
+    if (!drag) return;
+    const box = drag.scroller.getBoundingClientRect();
+    const margin = 56, speed = 9;
+    if (drag.y < box.top + margin) drag.scroller.scrollTop -= speed;
+    else if (drag.y > box.bottom - margin) drag.scroller.scrollTop += speed;
+    drag.raf = requestAnimationFrame(autoScroll);
+  };
+
+  list.addEventListener('pointerdown', e => {
+    const grip = e.target.closest('[data-grip]');
+    if (!grip || e.button > 0) return;
+    const row = grip.closest('.catrow');
+    if (!row || list.children.length < 2) return;
+    e.preventDefault();
+    grip.setPointerCapture(e.pointerId);
+    drag = { row, grip, id: e.pointerId, startY: e.clientY, y: e.clientY, moved: false, raf: 0,
+             scroller: list.closest('.sheet__body') };
+    row.classList.add('is-dragging');
+    document.body.classList.add('is-sorting');
+    drag.raf = requestAnimationFrame(autoScroll);
+  });
+
+  list.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    drag.y = e.clientY;
+    const dy = e.clientY - drag.startY;
+    if (Math.abs(dy) > 4) drag.moved = true;
+    drag.row.style.transform = `translateY(${dy}px)`;
+
+    // superato il centro del vicino, la riga prende il suo posto
+    const mid = midOf(drag.row);
+    const [prev, next] = rowsAround(drag.row);
+    const wasAt = drag.row.getBoundingClientRect().top;
+    let swapped = false;
+    if (prev && mid < midOf(prev)) { list.insertBefore(drag.row, prev); swapped = true; }
+    else if (next && mid > midOf(next)) { list.insertBefore(next, drag.row); swapped = true; }
+    if (swapped) {
+      // lo scambio sposta la riga nel layout: correggo l'origine così resta
+      // ferma sotto il dito e il trascinamento prosegue senza scatti
+      const shift = drag.row.getBoundingClientRect().top - wasAt;
+      drag.startY += shift;
+      drag.row.style.transform = `translateY(${e.clientY - drag.startY}px)`;
+    }
+  });
+
+  const end = e => {
+    if (!drag || (e && e.pointerId !== drag.id)) return;
+    cancelAnimationFrame(drag.raf);
+    drag.row.style.transform = '';
+    drag.row.classList.remove('is-dragging');
+    document.body.classList.remove('is-sorting');
+    const moved = drag.moved;
+    drag = null;
+    if (!moved) return;
+    dragEndedAt = Date.now();
+    const order = $$('.catrow', list).map(r => r.dataset.cat);
+    state.cats.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+    persist();
+    renderCatList();
+    render();          // chip in alto e filtri seguono il nuovo ordine
+  };
+  list.addEventListener('pointerup', end);
+  list.addEventListener('pointercancel', end);
+}
+
 function hslToHex(h, s, l) {
   s /= 100; l /= 100;
   const k = n => (n + h / 30) % 12;
@@ -673,9 +750,11 @@ function wire() {
   $('#btnCategories').addEventListener('click', () => { renderCatList(); openSheet('sheetCats'); });
   $('#catAdd').addEventListener('click', () => openCat(null));
   $('#catList').addEventListener('click', e => {
+    if (e.target.closest('[data-grip]') || Date.now() - dragEndedAt < 300) return;
     const row = e.target.closest('[data-cat]'); if (!row) return;
     openCat(row.dataset.cat);
   });
+  wireCatDrag();
   $('#catSwatches').addEventListener('click', e => {
     const b = e.target.closest('[data-color]'); if (!b) return;
     state.editingCat.color = b.dataset.color; renderCatEditor();
