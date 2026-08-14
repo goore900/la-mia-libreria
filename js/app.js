@@ -137,7 +137,7 @@ const STATES = [
 
 const state = {
   books: [], cats: [],
-  settings: { view: '4', sort: 'title' },
+  settings: { view: '6', sort: 'title' },
   f: { q: '', states: new Set(), cats: new Set(), catsAll: false, author: '' },
   editing: null, editingCover: undefined, editingCat: null
 };
@@ -145,7 +145,9 @@ const state = {
 function bootData() {
   state.books = load(K.books, null);
   state.cats  = load(K.cats, null);
-  state.settings = Object.assign({ view: '4', sort: 'title' }, load(K.set, {}));
+  state.settings = Object.assign({ view: '6', sort: 'title' }, load(K.set, {}));
+  // le viste 4 e 8 non esistono più: chi le aveva scelte passa alla griglia
+  if (state.settings.view !== 'list') state.settings.view = '6';
   if (!state.books || !state.cats) seed();
 }
 function seed() {

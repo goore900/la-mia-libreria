@@ -49,7 +49,7 @@
   --r-s:10px; --r-m:16px; --r-l:22px; --r-xl:28px;
   --safe-b:env(safe-area-inset-bottom,0px);
   --safe-t:env(safe-area-inset-top,0px);
-  --cols:4;
+  --cols:6;
 }
 
 *,*::before,*::after{box-sizing:border-box}
@@ -187,7 +187,7 @@ select.input{appearance:none;
 
 .viewswitch{display:flex;background:var(--bianco);border:1px solid var(--bordo);border-radius:999px;
   padding:3px;box-shadow:var(--ombra-s)}
-.viewswitch__btn{min-width:36px;height:32px;border-radius:999px;display:grid;place-items:center;
+.viewswitch__btn{min-width:46px;height:32px;border-radius:999px;display:grid;place-items:center;
   font-size:13.5px;font-weight:800;color:var(--testo-fade);transition:background .18s,color .18s}
 .viewswitch__btn .icon{width:17px;height:17px}
 .viewswitch__btn.is-on{background:linear-gradient(135deg,var(--lilla-200),var(--celeste-200));color:var(--testo)}
@@ -246,7 +246,7 @@ select.input{appearance:none;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card__cats{display:none}
 
-/* 6 per riga: copertina + titolo breve */
+/* griglia: copertina + titolo breve */
 .books[data-cols="6"]{gap:8px}
 .books[data-cols="6"] .card__body{padding:5px 6px 7px}
 .books[data-cols="6"] .card__title{font-size:10px;-webkit-line-clamp:2;font-weight:700}
@@ -254,15 +254,6 @@ select.input{appearance:none;
 .books[data-cols="6"] .card__prog{display:none}
 .books[data-cols="6"] .badge{width:18px;height:18px}
 .books[data-cols="6"] .badge .icon{width:11px;height:11px}
-
-/* 8 per riga: mosaico di sole copertine */
-.books[data-cols="8"]{gap:6px}
-.books[data-cols="8"] .card{border-radius:var(--r-s)}
-.books[data-cols="8"] .card__body{display:none}
-.books[data-cols="8"] .card__ph svg{width:52%;height:52%}
-.books[data-cols="8"] .badge{width:16px;height:16px}
-.books[data-cols="8"] .badge .icon{width:10px;height:10px}
-.books[data-cols="8"] .card__badges{top:3px;right:3px;gap:2px}
 
 /* vista elenco */
 .is-list .card{flex-direction:row;align-items:stretch;border-radius:var(--r-m)}
@@ -403,9 +394,6 @@ body.is-sorting .catrow:not(.is-dragging){opacity:.75}
   .sheet__panel{border-radius:var(--r-xl);max-height:88dvh}
   .sheet__panel--tall{height:auto;max-height:88dvh}
   .fab{right:max(20px, calc(50vw - 550px));bottom:28px}
-  .books[data-cols="4"] .card__title{font-size:14px}
-  .books[data-cols="4"] .card__author{font-size:12px}
-  .books[data-cols="4"] .card__prog{font-size:11.5px}
   .books[data-cols="6"] .card__title{font-size:12px}
   .books[data-cols="6"] .card__author{display:block;font-size:10.5px}
   .card__body{padding:9px 11px 11px}
@@ -530,10 +518,8 @@ body.is-sorting .catrow:not(.is-dragging){opacity:.75}
         <span class="chip__count" id="filterCount" hidden>0</span>
       </button>
       <div class="viewswitch" role="group" aria-label="Visualizzazione">
-        <button class="viewswitch__btn" data-view="list" aria-label="Elenco"><svg class="icon"><use href="#i-list"/></svg></button>
-        <button class="viewswitch__btn" data-view="4">4</button>
-        <button class="viewswitch__btn" data-view="6">6</button>
-        <button class="viewswitch__btn" data-view="8">8</button>
+        <button class="viewswitch__btn" data-view="list" aria-label="Vista a elenco" title="Elenco"><svg class="icon"><use href="#i-list"/></svg></button>
+        <button class="viewswitch__btn" data-view="6" aria-label="Vista a griglia" title="Griglia"><svg class="icon"><use href="#i-grid"/></svg></button>
       </div>
     </div>
 
@@ -1102,7 +1088,7 @@ const STATES = [
 
 const state = {
   books: [], cats: [],
-  settings: { view: '4', sort: 'title' },
+  settings: { view: '6', sort: 'title' },
   f: { q: '', states: new Set(), cats: new Set(), catsAll: false, author: '' },
   editing: null, editingCover: undefined, editingCat: null
 };
@@ -1110,7 +1096,9 @@ const state = {
 function bootData() {
   state.books = load(K.books, null);
   state.cats  = load(K.cats, null);
-  state.settings = Object.assign({ view: '4', sort: 'title' }, load(K.set, {}));
+  state.settings = Object.assign({ view: '6', sort: 'title' }, load(K.set, {}));
+  // le viste 4 e 8 non esistono più: chi le aveva scelte passa alla griglia
+  if (state.settings.view !== 'list') state.settings.view = '6';
   if (!state.books || !state.cats) seed();
 }
 function seed() {

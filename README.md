@@ -45,14 +45,12 @@ L'app si riblocca da sola dopo 15 minuti in secondo piano, oppure con
 
 ### La griglia
 
-In alto a destra si sceglie come vedere i libri:
+In alto a destra si sceglie come vedere i libri, con due pulsanti:
 
 | Vista | Cosa mostra |
 |---|---|
 | ☰ Elenco | riga per riga, con autrice, avanzamento e categorie |
-| 4 | 4 per riga: copertina, titolo, autrice, avanzamento |
-| 6 | 6 per riga: copertina e titolo breve |
-| 8 | 8 per riga: mosaico di sole copertine |
+| ▦ Griglia | 6 copertine per riga, con il titolo sotto |
 
 I libri senza copertina mostrano un monogramma su sfondo pastello (il colore viene dalle
 sue categorie), e i badge indicano 💗 preferito, 📖 letto, 💔 non piaciuto.
