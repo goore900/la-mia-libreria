@@ -102,19 +102,19 @@ const Auth = (() => {
   }
   const canSubtle = () => !!(window.crypto && crypto.subtle && crypto.subtle.deriveBits);
 
+  /* Password d'accesso fissa. Qui sotto c'è solo la sua impronta, mai la password
+     in chiaro: il repository è pubblico e dall'impronta non si torna indietro.
+     Le due varianti servono perché crypto.subtle non c'è in tutti i contesti. */
+  const FIXED = {
+    salt: 'la-mia-libreria-2026',
+    pbkdf2: 'yqR5syX6OWL/RXwxGGQl6XSJthhCjmETFemxXpIm4lE=',
+    fnv: 'd822e672'
+  };
+
   return {
-    exists: () => !!load(K.auth, null),
-    hint: () => (load(K.auth, {}) || {}).hint || '',
-    async setPassword(pwd, hint) {
-      const salt = Math.random().toString(36).slice(2) + Date.now().toString(36);
-      const algo = canSubtle() ? 'pbkdf2' : 'fnv';
-      save(K.auth, { algo, salt, hash: await derive(pwd, salt, algo), hint: hint || '' });
-    },
     async verify(pwd) {
-      const rec = load(K.auth, null);
-      if (!rec) return false;
-      if (rec.algo === 'pbkdf2' && !canSubtle()) return false;
-      return (await derive(pwd, rec.salt, rec.algo)) === rec.hash;
+      const algo = canSubtle() ? 'pbkdf2' : 'fnv';
+      return (await derive(pwd, FIXED.salt, algo)) === FIXED[algo];
     },
     unlock() { try { sessionStorage.setItem('lml.unlocked', '1'); } catch {} },
     lock() { try { sessionStorage.removeItem('lml.unlocked'); } catch {} },
@@ -543,21 +543,11 @@ async function importData(file) {
 }
 
 /* ------------------------------------------------------------------ lock */
-function showLock(setup) {
+function showLock() {
   $('#app').hidden = true;
-  const lock = $('#lock'); lock.hidden = false;
-  $('#pwdConfirmField').hidden = !setup;
-  $('#pwdHintField').hidden = !setup;
-  $('#lockSub').textContent = setup
-    ? 'Scegli la password che proteggerà la tua libreria'
-    : 'Inserisci la password per entrare';
-  $('#lockSubmitLabel').textContent = setup ? 'Crea la libreria' : 'Entra';
-  $('#pwdLabel').textContent = setup ? 'Nuova password' : 'Password';
-  $('#pwdInput').setAttribute('autocomplete', setup ? 'new-password' : 'current-password');
-  $('#showHintBtn').hidden = setup || !Auth.hint();
-  $('#lockError').hidden = true; $('#lockHint').hidden = true;
-  $('#lockForm').dataset.setup = setup ? '1' : '';
-  $('#pwdInput').value = ''; $('#pwdConfirm').value = '';
+  $('#lock').hidden = false;
+  $('#lockError').hidden = true;
+  $('#pwdInput').value = '';
   setTimeout(() => $('#pwdInput').focus(), 300);
 }
 function enterApp() {
@@ -571,31 +561,18 @@ function wire() {
   /* --- lock --- */
   $('#lockForm').addEventListener('submit', async e => {
     e.preventDefault();
-    const setup = !!$('#lockForm').dataset.setup;
-    const pwd = $('#pwdInput').value;
     const err = $('#lockError');
-    const fail = m => { err.textContent = m; err.hidden = false; $('#lockForm').classList.remove('shake');
-      void $('#lockForm').offsetWidth; $('#lockForm').classList.add('shake'); };
-    if (setup) {
-      if (pwd.length < 4) return fail('La password deve avere almeno 4 caratteri');
-      if (pwd !== $('#pwdConfirm').value) return fail('Le due password non coincidono');
-      await Auth.setPassword(pwd, $('#pwdHint').value.trim());
-      Auth.unlock(); enterApp(); toast('Benvenuta nella tua libreria');
-    } else {
-      if (await Auth.verify(pwd)) { Auth.unlock(); enterApp(); }
-      else fail('Password non corretta');
-    }
+    if (await Auth.verify($('#pwdInput').value)) { Auth.unlock(); enterApp(); return; }
+    err.textContent = 'Password non corretta'; err.hidden = false;
+    $('#lockForm').classList.remove('shake');
+    void $('#lockForm').offsetWidth;
+    $('#lockForm').classList.add('shake');
   });
   $('#pwdToggle').addEventListener('click', () => {
     const i = $('#pwdInput'), show = i.type === 'password';
     i.type = show ? 'text' : 'password';
     $('#pwdToggle').innerHTML = icon(show ? 'eye-off' : 'eye');
     i.focus();
-  });
-  $('#showHintBtn').addEventListener('click', () => {
-    const h = $('#lockHint');
-    h.textContent = Auth.hint() ? 'Suggerimento: ' + Auth.hint() : 'Nessun suggerimento salvato.';
-    h.hidden = false;
   });
 
   /* --- ricerca --- */
@@ -728,15 +705,6 @@ function wire() {
 
   /* --- impostazioni --- */
   $('#btnSettings').addEventListener('click', () => { renderStats(); openSheet('sheetSettings'); });
-  $('#pwdChangeForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    const msg = $('#pwdChangeMsg');
-    if (!await Auth.verify($('#oldPwd').value)) { msg.textContent = 'Password attuale non corretta'; msg.style.color = '#c2557a'; msg.hidden = false; return; }
-    if ($('#newPwd').value.length < 4) { msg.textContent = 'La nuova password deve avere almeno 4 caratteri'; msg.style.color = '#c2557a'; msg.hidden = false; return; }
-    await Auth.setPassword($('#newPwd').value, $('#newHint').value.trim());
-    e.target.reset(); msg.textContent = 'Password aggiornata'; msg.style.color = ''; msg.hidden = false;
-    setTimeout(() => { msg.hidden = true; }, 3000);
-  });
   $('#btnExport').addEventListener('click', exportData);
   $('#importInput').addEventListener('change', e => {
     const f = e.target.files[0]; if (f) importData(f); e.target.value = '';
@@ -754,7 +722,7 @@ function wire() {
     persist(); render(); renderStats(); renderCatList(); toast('Archivio svuotato');
   });
   $('#btnLock').addEventListener('click', () => {
-    Auth.lock(); $$('.sheet').forEach(closeSheet); showLock(false);
+    Auth.lock(); $$('.sheet').forEach(closeSheet); showLock();
   });
 
   /* --- il titolo aggiorna il monogramma dell'anteprima --- */
@@ -768,7 +736,7 @@ function wire() {
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) { hiddenAt = Date.now(); return; }
     if (hiddenAt && Date.now() - hiddenAt > 15 * 60 * 1000 && !$('#app').hidden) {
-      Auth.lock(); $$('.sheet').forEach(closeSheet); showLock(false);
+      Auth.lock(); $$('.sheet').forEach(closeSheet); showLock();
     }
     hiddenAt = 0;
   });
@@ -790,9 +758,9 @@ function wire() {
   bootData();
   await Covers.init();
   wire();
-  if (!Auth.exists()) showLock(true);
-  else if (Auth.isUnlocked()) enterApp();
-  else showLock(false);
+  localStorage.removeItem(K.auth);   // ripulisce la password scelta dalle versioni precedenti
+  if (Auth.isUnlocked()) enterApp();
+  else showLock();
 
   // registrazione del service worker (init è async: la 'load' può essere già passata)
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {

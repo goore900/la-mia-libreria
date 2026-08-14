@@ -93,23 +93,11 @@
       </span>
     </label>
 
-    <label class="field" id="pwdConfirmField" hidden>
-      <span class="field__label">Conferma password</span>
-      <input type="password" id="pwdConfirm" class="input" autocapitalize="off" autocomplete="new-password">
-    </label>
-
-    <label class="field" id="pwdHintField" hidden>
-      <span class="field__label">Suggerimento (facoltativo)</span>
-      <input type="text" id="pwdHint" class="input" placeholder="Un indizio per ricordarla">
-    </label>
-
-    <p class="lock__hint" id="lockHint" hidden></p>
     <p class="lock__error" id="lockError" role="alert" hidden></p>
 
     <button type="submit" class="btn btn--primary btn--block" id="lockSubmit">
-      <svg class="icon"><use href="#i-lock"/></svg><span id="lockSubmitLabel">Entra</span>
+      <svg class="icon"><use href="#i-lock"/></svg><span>Entra</span>
     </button>
-    <button type="button" class="btn btn--link" id="showHintBtn" hidden>Non ricordo la password</button>
   </form>
 </div>
 
@@ -350,16 +338,9 @@
 
       <section class="fgroup">
         <h3 class="fgroup__title"><svg class="icon"><use href="#i-key"/></svg> Password</h3>
-        <form id="pwdChangeForm" class="stack" autocomplete="off">
-          <label class="field"><span class="field__label">Password attuale</span>
-            <input type="password" class="input" id="oldPwd" autocomplete="current-password" required></label>
-          <label class="field"><span class="field__label">Nuova password</span>
-            <input type="password" class="input" id="newPwd" autocomplete="new-password" required></label>
-          <label class="field"><span class="field__label">Suggerimento (facoltativo)</span>
-            <input type="text" class="input" id="newHint" placeholder="Un indizio per ricordarla"></label>
-          <button class="btn btn--primary" type="submit">Aggiorna password</button>
-          <p class="ok" id="pwdChangeMsg" hidden></p>
-        </form>
+        <p class="hint">La password d'accesso è fissa ed è la stessa su ogni dispositivo.
+          Nel codice dell'app non è scritta: c'è solo la sua impronta, dalla quale non si
+          può risalire alla password.</p>
       </section>
 
       <section class="fgroup">

@@ -21,12 +21,27 @@ Non serve né uno store né un account: **tutti i dati restano sul telefono**.
 
 ### Password
 
-Al primo avvio scegli la password (minimo 4 caratteri) e, se vuoi, un suggerimento.
-Da quel momento serve per entrare. La password non viene salvata in chiaro: si conserva
-solo la sua impronta (PBKDF2-SHA256 con 150.000 iterazioni), quindi **non è recuperabile** —
-se la dimentichi resta il suggerimento, altrimenti bisogna ripartire da zero.
+La password d'accesso è **fissa** ed è la stessa su ogni dispositivo: non si sceglie al
+primo avvio e non si cambia dall'app.
+
+Nel codice non è scritta in chiaro — il repository è pubblico — ma solo la sua impronta
+(PBKDF2-SHA256, 150.000 iterazioni, con un ripiego per i contesti privi di `crypto.subtle`).
+Dall'impronta non si risale alla password.
+
+Per cambiarla serve ricalcolare l'impronta e sostituire la costante `FIXED` in
+`js/app.js`:
+
+```bash
+node -e 'const c=require("crypto");const P="nuova-password",S="la-mia-libreria-2026";
+console.log(c.pbkdf2Sync(P,S,150000,32,"sha256").toString("base64"));'
+```
+
 L'app si riblocca da sola dopo 15 minuti in secondo piano, oppure con
 *Impostazioni → Blocca l'app*.
+
+> Il blocco impedisce di usare l'app, non nasconde i file del sito: su un sito pubblico
+> l'elenco iniziale in `js/seed.js` è comunque leggibile. I libri che aggiungi e le
+> copertine restano invece solo sul tuo dispositivo.
 
 ### La griglia
 
