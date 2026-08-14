@@ -73,25 +73,6 @@ fotocamera, viene ridimensionata e salvata sul telefono), titolo, autrice, volum
 volume attuale, pagina attuale, pagine totali, stato, categorie e note.
 Il tasto ➕ in basso aggiunge un libro nuovo.
 
-### Copertine da internet
-
-Dalla scheda del libro, **Cerca online** interroga Google Books e Open Library con titolo e
-autrice e mostra le copertine trovate: si tocca quella giusta e viene assegnata.
-In *Impostazioni → Copertine*, **Cerca copertine mancanti** fa lo stesso in sequenza per
-tutti i libri che non hanno un'immagine, assegnandola solo quando titolo e autrice
-corrispondono davvero; mostra l'avanzamento e si può fermare quando si vuole.
-
-Le richieste partono dal browser del telefono: nessun server dell'app vede la libreria, e
-le immagini restano sul dispositivo. Quando il sito che ospita l'immagine lo consente
-(intestazioni CORS) l'immagine viene salvata sul telefono, quindi finisce nel backup e si
-vede anche offline; altrimenti viene salvato solo il link e serve la connessione per
-vederla. Google Books limita il numero di ricerche giornaliere per indirizzo IP: al
-raggiungimento del limite l'app lo dice, smette di interrogarlo per dieci minuti e
-prosegue con Open Library.
-
-> Sono cataloghi internazionali: molte edizioni italiane indipendenti non ci sono, e per
-> le voci scritte come nome di serie conviene cercare il titolo del singolo volume.
-
 ### Categorie
 
 Dall'icona 🏷️ in alto: crea, rinomina, elimina, scegli l'icona (fiore, stella, cuore,

@@ -211,9 +211,6 @@
             <svg class="icon"><use href="#i-image"/></svg> Scegli immagine
             <input type="file" id="coverInput" accept="image/*" hidden>
           </label>
-          <button type="button" class="btn btn--soft" id="coverSearch">
-            <svg class="icon"><use href="#i-search"/></svg> Cerca online
-          </button>
           <button type="button" class="btn btn--ghost" id="coverRemove">Rimuovi</button>
           <p class="hint">L'immagine resta salvata solo su questo dispositivo.</p>
         </div>
@@ -271,26 +268,6 @@
     <div class="sheet__foot">
       <button class="btn btn--soft" data-close>Annulla</button>
       <button class="btn btn--primary" id="bookSave"><svg class="icon"><use href="#i-check"/></svg> Salva</button>
-    </div>
-  </div>
-</div>
-
-<div class="sheet" id="sheetCoverSearch" hidden>
-  <div class="sheet__backdrop" data-close></div>
-  <div class="sheet__panel sheet__panel--tall" role="dialog" aria-label="Cerca copertina">
-    <div class="sheet__head">
-      <h2 class="sheet__title"><svg class="icon"><use href="#i-image"/></svg> Cerca copertina</h2>
-      <button class="icon-btn" data-close aria-label="Chiudi"><svg class="icon"><use href="#i-x"/></svg></button>
-    </div>
-    <div class="sheet__body">
-      <form class="searchrow" id="coverSearchForm">
-        <input type="search" class="input" id="coverQuery" placeholder="Titolo e autrice" enterkeyhint="search">
-        <button class="btn btn--primary" type="submit"><svg class="icon"><use href="#i-search"/></svg></button>
-      </form>
-      <p class="hint">Risultati da Google Books e Open Library. Tocca la copertina giusta
-        per assegnarla al libro.</p>
-      <p class="searchstate" id="coverState" hidden></p>
-      <div class="covergrid" id="coverResults"></div>
     </div>
   </div>
 </div>
@@ -368,20 +345,6 @@
           Una volta inserita non viene più richiesta: per farla richiedere di nuovo usa
           <b>Blocca l'app</b> qui sotto. Nel codice dell'app non è scritta: c'è solo la sua
           impronta, dalla quale non si può risalire alla password.</p>
-      </section>
-
-      <section class="fgroup">
-        <h3 class="fgroup__title"><svg class="icon"><use href="#i-image"/></svg> Copertine</h3>
-        <p class="hint">Cerca online una copertina per ogni libro che non ne ha, e la assegna
-          solo quando titolo e autrice corrispondono. Le immagini vengono scaricate dal tuo
-          telefono e restano su questo dispositivo.</p>
-        <div class="row">
-          <button class="btn btn--soft" id="btnFetchCovers">
-            <svg class="icon"><use href="#i-search"/></svg> Cerca copertine mancanti
-          </button>
-          <button class="btn btn--ghost" id="btnFetchStop" hidden>Ferma</button>
-        </div>
-        <p class="searchstate" id="fetchState" hidden></p>
       </section>
 
       <section class="fgroup">
