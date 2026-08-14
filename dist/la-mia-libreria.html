@@ -150,6 +150,7 @@ select.input{appearance:none;
 .lock__error{color:#c2557a;font-size:13.5px;font-weight:600;margin:0 0 12px}
 .lock__hint{background:var(--celeste-50);border:1px solid var(--celeste-200);border-radius:var(--r-m);
   padding:10px 12px;font-size:13.5px;color:var(--testo-soft);margin:0 0 12px}
+.lock__note{font-size:12px;color:var(--testo-fade);line-height:1.45;margin:14px 4px 0}
 .shake{animation:shake .4s}
 @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
 
@@ -512,6 +513,8 @@ body.is-sorting .catrow:not(.is-dragging){opacity:.75}
     <button type="submit" class="btn btn--primary btn--block" id="lockSubmit">
       <svg class="icon"><use href="#i-lock"/></svg><span>Entra</span>
     </button>
+    <p class="lock__note">Su questo dispositivo non ti verrà più chiesta.
+      Per richiudere la libreria usa <b>Blocca l'app</b> nelle impostazioni.</p>
   </form>
 </div>
 
@@ -776,8 +779,9 @@ body.is-sorting .catrow:not(.is-dragging){opacity:.75}
       <section class="fgroup">
         <h3 class="fgroup__title"><svg class="icon"><use href="#i-key"/></svg> Password</h3>
         <p class="hint">La password d'accesso è fissa ed è la stessa su ogni dispositivo.
-          Nel codice dell'app non è scritta: c'è solo la sua impronta, dalla quale non si
-          può risalire alla password.</p>
+          Una volta inserita non viene più richiesta: per farla richiedere di nuovo usa
+          <b>Blocca l'app</b> qui sotto. Nel codice dell'app non è scritta: c'è solo la sua
+          impronta, dalla quale non si può risalire alla password.</p>
       </section>
 
       <section class="fgroup">
@@ -1026,7 +1030,8 @@ const uid = () => 'b' + Date.now().toString(36) + Math.random().toString(36).sli
 const icon = (n, cls = 'icon') => `<svg class="${cls}"><use href="#i-${n}"/></svg>`;
 const collator = new Intl.Collator('it', { sensitivity: 'base', numeric: true });
 
-const K = { books: 'lml.v1.books', cats: 'lml.v1.categories', set: 'lml.v1.settings', auth: 'lml.v1.auth' };
+const K = { books: 'lml.v1.books', cats: 'lml.v1.categories', set: 'lml.v1.settings',
+            auth: 'lml.v1.auth', unlocked: 'lml.v1.unlocked' };
 const load = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; }
   catch { toast('Memoria piena: elimina qualche copertina'); return false; } };
@@ -1127,9 +1132,20 @@ const Auth = (() => {
       const algo = canSubtle() ? 'pbkdf2' : 'fnv';
       return (await derive(pwd, FIXED.salt, algo)) === FIXED[algo];
     },
-    unlock() { try { sessionStorage.setItem('lml.unlocked', '1'); } catch {} },
-    lock() { try { sessionStorage.removeItem('lml.unlocked'); } catch {} },
-    isUnlocked() { try { return sessionStorage.getItem('lml.unlocked') === '1'; } catch { return false; } }
+    /* lo sblocco resta memorizzato sul dispositivo: la password si inserisce una volta
+       sola e poi non viene più chiesta, finché non si usa "Blocca l'app". */
+    unlock() {
+      try { localStorage.setItem(K.unlocked, '1'); } catch {}
+      try { sessionStorage.setItem(K.unlocked, '1'); } catch {}   // se localStorage è negato
+    },
+    lock() {
+      try { localStorage.removeItem(K.unlocked); } catch {}
+      try { sessionStorage.removeItem(K.unlocked); } catch {}
+    },
+    isUnlocked() {
+      try { if (localStorage.getItem(K.unlocked) === '1') return true; } catch {}
+      try { return sessionStorage.getItem(K.unlocked) === '1'; } catch { return false; }
+    }
   };
 })();
 
@@ -2029,16 +2045,6 @@ function wire() {
   $('#fTitle').addEventListener('input', () => {
     if (state.editingCover === undefined && !(state.editing && Covers.get(state.editing)))
       renderCoverPreview(state.books.find(x => x.id === state.editing));
-  });
-
-  /* --- blocco automatico dopo 15 minuti in secondo piano --- */
-  let hiddenAt = 0;
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { hiddenAt = Date.now(); return; }
-    if (hiddenAt && Date.now() - hiddenAt > 15 * 60 * 1000 && !$('#app').hidden) {
-      Auth.lock(); $$('.sheet').forEach(closeSheet); showLock();
-    }
-    hiddenAt = 0;
   });
 
   /* --- chiusura sheet --- */

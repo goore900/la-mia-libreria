@@ -15,7 +15,8 @@ const uid = () => 'b' + Date.now().toString(36) + Math.random().toString(36).sli
 const icon = (n, cls = 'icon') => `<svg class="${cls}"><use href="#i-${n}"/></svg>`;
 const collator = new Intl.Collator('it', { sensitivity: 'base', numeric: true });
 
-const K = { books: 'lml.v1.books', cats: 'lml.v1.categories', set: 'lml.v1.settings', auth: 'lml.v1.auth' };
+const K = { books: 'lml.v1.books', cats: 'lml.v1.categories', set: 'lml.v1.settings',
+            auth: 'lml.v1.auth', unlocked: 'lml.v1.unlocked' };
 const load = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; }
   catch { toast('Memoria piena: elimina qualche copertina'); return false; } };
@@ -116,9 +117,20 @@ const Auth = (() => {
       const algo = canSubtle() ? 'pbkdf2' : 'fnv';
       return (await derive(pwd, FIXED.salt, algo)) === FIXED[algo];
     },
-    unlock() { try { sessionStorage.setItem('lml.unlocked', '1'); } catch {} },
-    lock() { try { sessionStorage.removeItem('lml.unlocked'); } catch {} },
-    isUnlocked() { try { return sessionStorage.getItem('lml.unlocked') === '1'; } catch { return false; } }
+    /* lo sblocco resta memorizzato sul dispositivo: la password si inserisce una volta
+       sola e poi non viene più chiesta, finché non si usa "Blocca l'app". */
+    unlock() {
+      try { localStorage.setItem(K.unlocked, '1'); } catch {}
+      try { sessionStorage.setItem(K.unlocked, '1'); } catch {}   // se localStorage è negato
+    },
+    lock() {
+      try { localStorage.removeItem(K.unlocked); } catch {}
+      try { sessionStorage.removeItem(K.unlocked); } catch {}
+    },
+    isUnlocked() {
+      try { if (localStorage.getItem(K.unlocked) === '1') return true; } catch {}
+      try { return sessionStorage.getItem(K.unlocked) === '1'; } catch { return false; }
+    }
   };
 })();
 
@@ -1018,16 +1030,6 @@ function wire() {
   $('#fTitle').addEventListener('input', () => {
     if (state.editingCover === undefined && !(state.editing && Covers.get(state.editing)))
       renderCoverPreview(state.books.find(x => x.id === state.editing));
-  });
-
-  /* --- blocco automatico dopo 15 minuti in secondo piano --- */
-  let hiddenAt = 0;
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { hiddenAt = Date.now(); return; }
-    if (hiddenAt && Date.now() - hiddenAt > 15 * 60 * 1000 && !$('#app').hidden) {
-      Auth.lock(); $$('.sheet').forEach(closeSheet); showLock();
-    }
-    hiddenAt = 0;
   });
 
   /* --- chiusura sheet --- */

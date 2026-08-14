@@ -36,8 +36,10 @@ node -e 'const c=require("crypto");const P="nuova-password",S="la-mia-libreria-2
 console.log(c.pbkdf2Sync(P,S,150000,32,"sha256").toString("base64"));'
 ```
 
-L'app si riblocca da sola dopo 15 minuti in secondo piano, oppure con
-*Impostazioni → Blocca l'app*.
+La password si inserisce **una volta sola per dispositivo**: lo sblocco resta memorizzato
+in `localStorage`, quindi riaprendo l'app si entra direttamente. Per farla richiedere di
+nuovo — o prima di prestare il telefono — si usa *Impostazioni → Blocca l'app*, che
+cancella lo sblocco memorizzato.
 
 > Il blocco impedisce di usare l'app, non nasconde i file del sito: su un sito pubblico
 > l'elenco iniziale in `js/seed.js` è comunque leggibile. I libri che aggiungi e le
@@ -152,9 +154,9 @@ dist/                   la-mia-libreria.html: tutta l'app in un file solo
 
 Nessuna dipendenza esterna, nessun passaggio di build: sono file statici.
 
-**Dove finiscono i dati:** libri, categorie e impostazioni in `localStorage`; le copertine
-in `IndexedDB` (con ripiego su `localStorage` se non disponibile); lo sblocco della
-sessione in `sessionStorage`.
+**Dove finiscono i dati:** libri, categorie, impostazioni e stato di sblocco in
+`localStorage`; le copertine in `IndexedDB`, con ripiego su `localStorage` dove non è
+disponibile.
 
 ## Provarla sul computer
 
