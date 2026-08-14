@@ -105,8 +105,10 @@ css/styles.css          palette pastello, griglie, pannelli
 js/seed.js              elenco iniziale di libri e categorie
 js/app.js               logica: password, archivio, filtri, categorie, backup
 sw.js                   service worker (funzionamento offline)
+build-single.mjs        genera la versione in un file solo
 manifest.webmanifest    installazione come app
 icons/                  icona dell'app (SVG + PNG)
+dist/                   la-mia-libreria.html: tutta l'app in un file solo
 ```
 
 Nessuna dipendenza esterna, nessun passaggio di build: sono file statici.
@@ -125,9 +127,22 @@ npx http-server -p 8080 .
 # poi apri http://127.0.0.1:8080
 ```
 
-## Pubblicarla su GitHub Pages
+## Metterla online gratis
 
-Impostazioni del repository → *Pages* → *Deploy from a branch* → branch
-`claude/la-mia-libreria-app-vrkzf5` (o `main`), cartella `/root`.
-L'indirizzo che ne esce è quello da aprire sul telefono. Pages serve il sito in HTTPS,
-requisito necessario per l'installazione e per il funzionamento offline.
+**GitHub Pages** (gratis se il repository è *pubblico*; con un repository privato serve un
+piano a pagamento): Settings → *Pages* → *Deploy from a branch* → branch
+`claude/la-mia-libreria-app-vrkzf5`, cartella `/ (root)`. L'indirizzo che compare è quello
+da aprire sul telefono. Pages serve il sito in HTTPS, requisito per l'installazione nella
+schermata Home e per il funzionamento offline.
+
+**Senza GitHub Pages**: `dist/la-mia-libreria.html` è l'app intera in un unico file, senza
+alcuna risorsa esterna. Si può caricare su un qualsiasi hosting statico gratuito
+(per esempio Netlify Drop, che pubblica trascinando il file nella pagina) oppure aprire
+direttamente dal telefono. Rigenerarlo dopo una modifica:
+
+```bash
+node build-single.mjs
+```
+
+In questa versione mancano solo installazione con manifest e cache offline del service
+worker, che hanno bisogno di file separati serviti da una cartella.
