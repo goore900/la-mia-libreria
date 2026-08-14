@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffe7f1"/>
+      <stop offset="0.5" stop-color="#f1e6fb"/>
+      <stop offset="1" stop-color="#e2f4fd"/>
+    </linearGradient>
+    <linearGradient id="petal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffb6d3"/>
+      <stop offset="1" stop-color="#cdb2ef"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <!-- stelline e cuoricini -->
+  <g fill="#ffffff" opacity="0.85">
+    <path d="M96 104l9 19 21 3-15 14 4 21-19-10-19 10 4-21-15-14 21-3z"/>
+    <path d="M416 380l7 15 17 2-12 12 3 17-15-8-15 8 3-17-12-12 17-2z"/>
+  </g>
+  <path d="M410 118c0-14-11-24-24-24-9 0-16 5-20 12-4-7-11-12-20-12-13 0-24 10-24 24 0 30 44 54 44 54s44-24 44-54z" fill="#ffb6d3" opacity="0.9"/>
+  <path d="M118 404c0-11-8-19-19-19-7 0-13 4-16 10-3-6-9-10-16-10-10 0-19 8-19 19 0 24 35 43 35 43s35-19 35-43z" fill="#a5daf5" opacity="0.85"/>
+
+  <!-- fiore centrale -->
+  <g transform="translate(256 250)">
+    <g fill="url(#petal)">
+      <circle cx="0" cy="-84" r="52"/>
+      <circle cx="73" cy="-42" r="52"/>
+      <circle cx="73" cy="42" r="52"/>
+      <circle cx="0" cy="84" r="52"/>
+      <circle cx="-73" cy="42" r="52"/>
+      <circle cx="-73" cy="-42" r="52"/>
+    </g>
+    <circle cx="0" cy="0" r="40" fill="#fffdfe"/>
+    <!-- libretto nel cuore del fiore -->
+    <g transform="translate(0 2)" fill="none" stroke="#a482d8" stroke-width="7" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M-19 -16h13a6 6 0 0 1 6 6v26a6 6 0 0 0-6-6h-13z"/>
+      <path d="M19 -16H6a6 6 0 0 0-6 6v26a6 6 0 0 1 6-6h13z"/>
+    </g>
+  </g>
+</svg>

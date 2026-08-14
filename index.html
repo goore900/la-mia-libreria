@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
+<meta name="theme-color" content="#f7edfb">
+<meta name="description" content="La Mia Libreria — archivio personale di libri con categorie, preferiti e avanzamento lettura.">
+<title>La Mia Libreria</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="La Mia Libreria">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ============ Sprite icone: fiori, stelle, cuoricini ============ -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <defs>
+    <g id="p-flower">
+      <circle cx="12" cy="5.6" r="3.3"/><circle cx="17.6" cy="8.8" r="3.3"/>
+      <circle cx="17.6" cy="15.2" r="3.3"/><circle cx="12" cy="18.4" r="3.3"/>
+      <circle cx="6.4" cy="15.2" r="3.3"/><circle cx="6.4" cy="8.8" r="3.3"/>
+    </g>
+  </defs>
+
+  <symbol id="i-flower" viewBox="0 0 24 24"><use href="#p-flower" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2.4" fill="currentColor"/></symbol>
+  <symbol id="i-flower-fill" viewBox="0 0 24 24"><use href="#p-flower" fill="currentColor"/><circle cx="12" cy="12" r="2.6" fill="currentColor"/></symbol>
+
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2.8l2.75 5.9 6.45.78-4.78 4.4 1.28 6.34L12 17.06 6.3 20.22l1.28-6.34-4.78-4.4 6.45-.78z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+  <symbol id="i-star-fill" viewBox="0 0 24 24"><path d="M12 2.8l2.75 5.9 6.45.78-4.78 4.4 1.28 6.34L12 17.06 6.3 20.22l1.28-6.34-4.78-4.4 6.45-.78z" fill="currentColor"/></symbol>
+
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20.6S3.6 15.6 3.6 9.8c0-2.7 2-4.6 4.4-4.6 1.7 0 3.2 1 4 2.4.8-1.4 2.3-2.4 4-2.4 2.4 0 4.4 1.9 4.4 4.6 0 5.8-8.4 10.8-8.4 10.8z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+  <symbol id="i-heart-fill" viewBox="0 0 24 24"><path d="M12 20.6S3.6 15.6 3.6 9.8c0-2.7 2-4.6 4.4-4.6 1.7 0 3.2 1 4 2.4.8-1.4 2.3-2.4 4-2.4 2.4 0 4.4 1.9 4.4 4.6 0 5.8-8.4 10.8-8.4 10.8z" fill="currentColor"/></symbol>
+  <symbol id="i-heart-broken" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M12 20.6S3.6 15.6 3.6 9.8c0-2.7 2-4.6 4.4-4.6 1.7 0 3.2 1 4 2.4.8-1.4 2.3-2.4 4-2.4 2.4 0 4.4 1.9 4.4 4.6 0 5.8-8.4 10.8-8.4 10.8z"/><path d="M12.6 6.2l-2.3 4.3 3.4 1.7-2.6 4.6"/></g></symbol>
+
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><g fill="currentColor"><path d="M11 3l1.5 3.9L16.4 8.4 12.5 9.9 11 13.8 9.5 9.9 5.6 8.4 9.5 6.9z"/><path d="M17.5 13.5l.9 2.3 2.3.9-2.3.9-.9 2.3-.9-2.3-2.3-.9 2.3-.9z"/></g></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.2A8.2 8.2 0 0 1 9.8 4 8.4 8.4 0 1 0 20 14.2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+  <symbol id="i-butterfly" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M12 6.5v11"/><path d="M12 7.5C10.6 5 8.4 3.6 6.2 4.2 3.9 4.8 3 7.6 4.3 9.8c-1.5 1.3-1.4 3.9.4 4.9 2.1 1.2 5.6-.3 7.3-3.1"/><path d="M12 7.5c1.4-2.5 3.6-3.9 5.8-3.3 2.3.6 3.2 3.4 1.9 5.6 1.5 1.3 1.4 3.9-.4 4.9-2.1 1.2-5.6-.3-7.3-3.1"/></g></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7.2 18.5h9.6a4 4 0 0 0 .5-8 5.6 5.6 0 0 0-10.7 1.2 3.4 3.4 0 0 0 .6 6.8z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+  <symbol id="i-crown" viewBox="0 0 24 24"><path d="M4 18h16l1.2-10-5 3.4L12 4.5 7.8 11.4l-5-3.4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M4 5.2A2.2 2.2 0 0 1 6.2 3H20v15.4H6.2A2.2 2.2 0 0 0 4 20.6z"/><path d="M4 18.4A2.2 2.2 0 0 1 6.2 16.2H20"/></g></symbol>
+  <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M6.5 3.5h11v17l-5.5-4-5.5 4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+
+  <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.3"/><path d="M15.4 15.4L20 20"/></g></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M3.5 5h17l-6.6 7.6v5.8l-3.8 2v-7.8z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></g></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6.5h16M4 12h16M4 17.5h16"/></g></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></g></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="M14 6l4 4"/></g></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 6.5h15M9.5 6.5V4h5v2.5M6.5 6.5l1 13h9l1-13M10 10v6M14 10v6"/></g></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></g></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="4.5" y="10" width="15" height="10.5" rx="3"/><path d="M8 10V7.6a4 4 0 0 1 8 0V10"/></g></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.2"/><path d="M11 11l8 8M16 16l-2 2M19 13l-2 2"/></g></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8l1.4 2.4 2.7-.5.6 2.7 2.5 1.1-1.3 2.4 1.3 2.4-2.5 1.1-.6 2.7-2.7-.5L12 21.2l-1.4-2.4-2.7.5-.6-2.7-2.5-1.1 1.3-2.4-1.3-2.4 2.5-1.1.6-2.7 2.7.5z"/></g></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2.6"/><circle cx="9" cy="9.6" r="1.6"/><path d="M4 17l4.6-4.6 3.4 3.4 3-3 4.6 4.6"/></g></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v10.5M7.8 10.5L12 14.8l4.2-4.3M4.5 19.5h15"/></g></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5V5M7.8 9.2L12 4.9l4.2 4.3M4.5 19.5h15"/></g></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.9"/></g></symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 4l16 16"/><path d="M9.6 5.9A9.4 9.4 0 0 1 12 5.8c6 0 9.5 6.2 9.5 6.2a17 17 0 0 1-3.3 4M6.4 8.1A16.6 16.6 0 0 0 2.5 12S6 18.2 12 18.2c1.2 0 2.3-.2 3.3-.6"/><path d="M10 10a2.9 2.9 0 0 0 4 4"/></g></symbol>
+  <symbol id="i-palette" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3.5a8.5 8.5 0 0 0 0 17c1.3 0 2-.9 2-1.9 0-1.6-1.2-1.9-1.2-3 0-.9.7-1.6 1.7-1.6h1.6a4.4 4.4 0 0 0 4.4-4.4c0-3.4-3.6-6.1-8.5-6.1z"/><circle cx="8" cy="10" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="7.6" r="1.1" fill="currentColor" stroke="none"/><circle cx="16" cy="9.6" r="1.1" fill="currentColor" stroke="none"/></g></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3.5 11.4V4.5a1 1 0 0 1 1-1h6.9c.3 0 .5.1.7.3l8.1 8.1a1 1 0 0 1 0 1.4l-6.9 6.9a1 1 0 0 1-1.4 0L3.8 12.1a1 1 0 0 1-.3-.7z"/><circle cx="8" cy="8" r="1.4"/></g></symbol>
+</svg>
+
+<!-- ============ Schermata di blocco ============ -->
+<div id="lock" class="lock" hidden>
+  <div class="lock__deco" aria-hidden="true">
+    <svg class="deco deco--1"><use href="#i-flower-fill"/></svg>
+    <svg class="deco deco--2"><use href="#i-heart-fill"/></svg>
+    <svg class="deco deco--3"><use href="#i-star-fill"/></svg>
+    <svg class="deco deco--4"><use href="#i-flower-fill"/></svg>
+    <svg class="deco deco--5"><use href="#i-star-fill"/></svg>
+  </div>
+
+  <form id="lockForm" class="lock__card" autocomplete="off">
+    <div class="lock__logo"><svg class="icon"><use href="#i-flower-fill"/></svg></div>
+    <h1 class="lock__title">La Mia Libreria</h1>
+    <p class="lock__sub" id="lockSub">Inserisci la password per entrare</p>
+
+    <input type="text" name="username" value="La Mia Libreria" autocomplete="username"
+           aria-hidden="true" tabindex="-1" class="sr-only" readonly>
+
+    <label class="field">
+      <span class="field__label" id="pwdLabel">Password</span>
+      <span class="field__pwd">
+        <input type="password" id="pwdInput" class="input" required autocapitalize="off" autocomplete="current-password" enterkeyhint="go">
+        <button type="button" class="icon-btn icon-btn--ghost" id="pwdToggle" aria-label="Mostra password"><svg class="icon"><use href="#i-eye"/></svg></button>
+      </span>
+    </label>
+
+    <label class="field" id="pwdConfirmField" hidden>
+      <span class="field__label">Conferma password</span>
+      <input type="password" id="pwdConfirm" class="input" autocapitalize="off" autocomplete="new-password">
+    </label>
+
+    <label class="field" id="pwdHintField" hidden>
+      <span class="field__label">Suggerimento (facoltativo)</span>
+      <input type="text" id="pwdHint" class="input" placeholder="Un indizio per ricordarla">
+    </label>
+
+    <p class="lock__hint" id="lockHint" hidden></p>
+    <p class="lock__error" id="lockError" role="alert" hidden></p>
+
+    <button type="submit" class="btn btn--primary btn--block" id="lockSubmit">
+      <svg class="icon"><use href="#i-lock"/></svg><span id="lockSubmitLabel">Entra</span>
+    </button>
+    <button type="button" class="btn btn--link" id="showHintBtn" hidden>Non ricordo la password</button>
+  </form>
+</div>
+
+<!-- ============ App ============ -->
+<div id="app" class="app" hidden>
+  <header class="topbar">
+    <div class="topbar__row">
+      <h1 class="brand">
+        <svg class="icon brand__icon"><use href="#i-flower-fill"/></svg>
+        <span>La Mia Libreria</span>
+      </h1>
+      <div class="topbar__actions">
+        <button class="icon-btn" id="btnCategories" aria-label="Gestisci categorie"><svg class="icon"><use href="#i-tag"/></svg></button>
+        <button class="icon-btn" id="btnSettings" aria-label="Impostazioni"><svg class="icon"><use href="#i-gear"/></svg></button>
+      </div>
+    </div>
+
+    <div class="searchbar">
+      <svg class="icon searchbar__icon"><use href="#i-search"/></svg>
+      <input type="search" id="search" class="searchbar__input" placeholder="Cerca titolo, autrice, note…" enterkeyhint="search" autocomplete="off">
+      <button class="icon-btn icon-btn--ghost" id="searchClear" aria-label="Pulisci ricerca" hidden><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+
+    <div class="toolbar">
+      <button class="chip chip--action" id="btnFilters">
+        <svg class="icon"><use href="#i-filter"/></svg> Filtri
+        <span class="chip__count" id="filterCount" hidden>0</span>
+      </button>
+      <div class="viewswitch" role="group" aria-label="Visualizzazione">
+        <button class="viewswitch__btn" data-view="list" aria-label="Elenco"><svg class="icon"><use href="#i-list"/></svg></button>
+        <button class="viewswitch__btn" data-view="4">4</button>
+        <button class="viewswitch__btn" data-view="6">6</button>
+        <button class="viewswitch__btn" data-view="8">8</button>
+      </div>
+    </div>
+
+    <div class="quickfilters" id="quickFilters"></div>
+  </header>
+
+  <main class="main">
+    <div class="results" id="results"></div>
+    <div class="books" id="books"></div>
+    <div class="empty" id="empty" hidden>
+      <svg class="icon empty__icon"><use href="#i-cloud"/></svg>
+      <p class="empty__title">Nessun libro trovato</p>
+      <p class="empty__text">Prova a cambiare i filtri o la ricerca.</p>
+    </div>
+  </main>
+
+  <button class="fab" id="btnAdd" aria-label="Aggiungi libro">
+    <svg class="icon"><use href="#i-plus"/></svg>
+  </button>
+</div>
+
+<!-- ============ Pannelli / modali ============ -->
+<div class="sheet" id="sheetFilters" hidden>
+  <div class="sheet__backdrop" data-close></div>
+  <div class="sheet__panel" role="dialog" aria-label="Filtri">
+    <div class="sheet__head">
+      <h2 class="sheet__title"><svg class="icon"><use href="#i-filter"/></svg> Filtri</h2>
+      <button class="icon-btn" data-close aria-label="Chiudi"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="sheet__body">
+      <section class="fgroup">
+        <h3 class="fgroup__title">Stato</h3>
+        <div class="chips" id="filterStates"></div>
+      </section>
+      <section class="fgroup">
+        <h3 class="fgroup__title">Categorie</h3>
+        <div class="chips" id="filterCats"></div>
+        <label class="switch">
+          <input type="checkbox" id="filterCatsAll">
+          <span>Deve avere <b>tutte</b> le categorie scelte</span>
+        </label>
+      </section>
+      <section class="fgroup">
+        <h3 class="fgroup__title">Autrice</h3>
+        <select class="input" id="filterAuthor"></select>
+      </section>
+      <section class="fgroup">
+        <h3 class="fgroup__title">Ordina per</h3>
+        <select class="input" id="filterSort">
+          <option value="title">Titolo (A→Z)</option>
+          <option value="title_desc">Titolo (Z→A)</option>
+          <option value="author">Autrice (A→Z)</option>
+          <option value="recent">Aggiunti di recente</option>
+          <option value="updated">Modificati di recente</option>
+        </select>
+      </section>
+    </div>
+    <div class="sheet__foot">
+      <button class="btn btn--soft" id="filtersReset">Azzera</button>
+      <button class="btn btn--primary" data-close>Mostra risultati</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="sheetBook" hidden>
+  <div class="sheet__backdrop" data-close></div>
+  <div class="sheet__panel sheet__panel--tall" role="dialog" aria-label="Scheda libro">
+    <div class="sheet__head">
+      <h2 class="sheet__title" id="bookSheetTitle"><svg class="icon"><use href="#i-book"/></svg> Scheda libro</h2>
+      <button class="icon-btn" data-close aria-label="Chiudi"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <form class="sheet__body" id="bookForm">
+      <div class="coveredit">
+        <div class="coveredit__preview" id="coverPreview"></div>
+        <div class="coveredit__actions">
+          <label class="btn btn--soft">
+            <svg class="icon"><use href="#i-image"/></svg> Scegli immagine
+            <input type="file" id="coverInput" accept="image/*" hidden>
+          </label>
+          <button type="button" class="btn btn--ghost" id="coverRemove">Rimuovi</button>
+          <p class="hint">L'immagine resta salvata solo su questo dispositivo.</p>
+        </div>
+      </div>
+
+      <label class="field">
+        <span class="field__label">Titolo</span>
+        <input type="text" class="input" id="fTitle" required placeholder="Titolo del libro o della serie">
+      </label>
+
+      <label class="field">
+        <span class="field__label">Autrice / Autore</span>
+        <input type="text" class="input" id="fAuthor" list="authorsList" placeholder="Es. S. Marty">
+        <datalist id="authorsList"></datalist>
+      </label>
+
+      <div class="grid2">
+        <label class="field">
+          <span class="field__label">Volumi totali</span>
+          <input type="number" class="input" id="fVolTot" min="0" step="1" inputmode="numeric" placeholder="—">
+        </label>
+        <label class="field">
+          <span class="field__label">Volume attuale</span>
+          <input type="number" class="input" id="fVolCur" min="0" step="1" inputmode="numeric" placeholder="—">
+        </label>
+        <label class="field">
+          <span class="field__label">Pagina attuale</span>
+          <input type="number" class="input" id="fPageCur" min="0" step="1" inputmode="numeric" placeholder="—">
+        </label>
+        <label class="field">
+          <span class="field__label">Pagine totali</span>
+          <input type="number" class="input" id="fPageTot" min="0" step="1" inputmode="numeric" placeholder="—">
+        </label>
+      </div>
+
+      <fieldset class="fgroup fgroup--fs">
+        <legend class="fgroup__title">Stato</legend>
+        <div class="chips" id="bookStates"></div>
+      </fieldset>
+
+      <fieldset class="fgroup fgroup--fs">
+        <legend class="fgroup__title">Categorie</legend>
+        <div class="chips" id="bookCats"></div>
+      </fieldset>
+
+      <label class="field">
+        <span class="field__label">Note</span>
+        <textarea class="input input--area" id="fNotes" rows="3" placeholder="Es. quando esce il vol. 3?"></textarea>
+      </label>
+
+      <button type="button" class="btn btn--danger btn--block" id="bookDelete" hidden>
+        <svg class="icon"><use href="#i-trash"/></svg> Elimina libro
+      </button>
+    </form>
+    <div class="sheet__foot">
+      <button class="btn btn--soft" data-close>Annulla</button>
+      <button class="btn btn--primary" id="bookSave"><svg class="icon"><use href="#i-check"/></svg> Salva</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="sheetCats" hidden>
+  <div class="sheet__backdrop" data-close></div>
+  <div class="sheet__panel sheet__panel--tall" role="dialog" aria-label="Categorie">
+    <div class="sheet__head">
+      <h2 class="sheet__title"><svg class="icon"><use href="#i-tag"/></svg> Categorie</h2>
+      <button class="icon-btn" data-close aria-label="Chiudi"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="sheet__body">
+      <div class="catlist" id="catList"></div>
+    </div>
+    <div class="sheet__foot">
+      <button class="btn btn--primary btn--block" id="catAdd"><svg class="icon"><use href="#i-plus"/></svg> Nuova categoria</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="sheetCatEdit" hidden>
+  <div class="sheet__backdrop" data-close></div>
+  <div class="sheet__panel" role="dialog" aria-label="Modifica categoria">
+    <div class="sheet__head">
+      <h2 class="sheet__title" id="catEditTitle"><svg class="icon"><use href="#i-palette"/></svg> Categoria</h2>
+      <button class="icon-btn" data-close aria-label="Chiudi"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <form class="sheet__body" id="catForm">
+      <label class="field">
+        <span class="field__label">Nome</span>
+        <input type="text" class="input" id="catName" required placeholder="Es. Da leggere">
+      </label>
+      <div class="field">
+        <span class="field__label">Colore pastello</span>
+        <div class="swatches" id="catSwatches"></div>
+        <label class="hueline">
+          <span>Colore libero</span>
+          <input type="range" id="catHue" min="0" max="359" step="1" class="hue">
+        </label>
+      </div>
+      <div class="field">
+        <span class="field__label">Icona</span>
+        <div class="iconpick" id="catIcons"></div>
+      </div>
+      <div class="catpreview" id="catPreview"></div>
+      <button type="button" class="btn btn--danger btn--block" id="catDelete" hidden>
+        <svg class="icon"><use href="#i-trash"/></svg> Elimina categoria
+      </button>
+    </form>
+    <div class="sheet__foot">
+      <button class="btn btn--soft" data-close>Annulla</button>
+      <button class="btn btn--primary" id="catSave"><svg class="icon"><use href="#i-check"/></svg> Salva</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="sheetSettings" hidden>
+  <div class="sheet__backdrop" data-close></div>
+  <div class="sheet__panel sheet__panel--tall" role="dialog" aria-label="Impostazioni">
+    <div class="sheet__head">
+      <h2 class="sheet__title"><svg class="icon"><use href="#i-gear"/></svg> Impostazioni</h2>
+      <button class="icon-btn" data-close aria-label="Chiudi"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="sheet__body">
+      <section class="fgroup">
+        <h3 class="fgroup__title"><svg class="icon"><use href="#i-star-fill"/></svg> La tua libreria</h3>
+        <div class="stats" id="stats"></div>
+      </section>
+
+      <section class="fgroup">
+        <h3 class="fgroup__title"><svg class="icon"><use href="#i-key"/></svg> Password</h3>
+        <form id="pwdChangeForm" class="stack" autocomplete="off">
+          <label class="field"><span class="field__label">Password attuale</span>
+            <input type="password" class="input" id="oldPwd" autocomplete="current-password" required></label>
+          <label class="field"><span class="field__label">Nuova password</span>
+            <input type="password" class="input" id="newPwd" autocomplete="new-password" required></label>
+          <label class="field"><span class="field__label">Suggerimento (facoltativo)</span>
+            <input type="text" class="input" id="newHint" placeholder="Un indizio per ricordarla"></label>
+          <button class="btn btn--primary" type="submit">Aggiorna password</button>
+          <p class="ok" id="pwdChangeMsg" hidden></p>
+        </form>
+      </section>
+
+      <section class="fgroup">
+        <h3 class="fgroup__title"><svg class="icon"><use href="#i-download"/></svg> Backup</h3>
+        <p class="hint">I dati sono salvati solo su questo dispositivo: esporta ogni tanto un backup.</p>
+        <div class="row">
+          <button class="btn btn--soft" id="btnExport"><svg class="icon"><use href="#i-download"/></svg> Esporta</button>
+          <label class="btn btn--soft"><svg class="icon"><use href="#i-upload"/></svg> Importa
+            <input type="file" id="importInput" accept="application/json" hidden></label>
+        </div>
+      </section>
+
+      <section class="fgroup">
+        <h3 class="fgroup__title"><svg class="icon"><use href="#i-heart-broken"/></svg> Zona pericolosa</h3>
+        <div class="row">
+          <button class="btn btn--ghost" id="btnRestoreSeed">Ripristina elenco iniziale</button>
+          <button class="btn btn--danger" id="btnWipe">Cancella tutto</button>
+        </div>
+      </section>
+
+      <button class="btn btn--soft btn--block" id="btnLock"><svg class="icon"><use href="#i-lock"/></svg> Blocca l'app</button>
+      <p class="version">La Mia Libreria · v1.0</p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<div class="confirm" id="confirm" hidden>
+  <div class="sheet__backdrop" data-close></div>
+  <div class="confirm__box" role="alertdialog" aria-labelledby="confirmTitle">
+    <h2 class="confirm__title" id="confirmTitle"></h2>
+    <p class="confirm__text" id="confirmText"></p>
+    <div class="confirm__actions">
+      <button class="btn btn--soft" id="confirmNo">Annulla</button>
+      <button class="btn btn--danger" id="confirmYes">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/seed.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
