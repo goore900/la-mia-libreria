@@ -151,7 +151,8 @@ const state = {
   books: [], cats: [],
   settings: { view: '6', sort: 'title' },
   f: { q: '', states: new Set(), cats: new Set(), catsAll: false, author: '' },
-  editing: null, editingCover: undefined, editingCoverUrl: undefined, editingCat: null
+  editing: null, editingCover: undefined, editingCoverUrl: undefined, editingCat: null,
+  editingVols: [], volPicking: null
 };
 
 function bootData() {
@@ -161,15 +162,50 @@ function bootData() {
   // le viste 4 e 8 non esistono più: chi le aveva scelte passa alla griglia
   if (state.settings.view !== 'list') state.settings.view = '6';
   if (!state.books || !state.cats) seed();
+  else migraVolumi();
 }
+
+/* I quattro campi numerici non ci sono più: quello che contenevano finisce nelle note,
+   e chi era a metà di un volume resta contrassegnato come "in lettura". */
+function migraVolumi() {
+  let cambiato = false;
+  for (const b of state.books) {
+    if (!Array.isArray(b.volumes)) { b.volumes = []; cambiato = true; }
+    if (!('volTot' in b || 'volCur' in b || 'pageCur' in b || 'pageTot' in b)) continue;
+    const bits = [];
+    if (b.volCur) bits.push('vol. ' + b.volCur + (b.volTot ? ' di ' + b.volTot : ''));
+    else if (b.volTot) bits.push(b.volTot + ' volumi');
+    if (b.pageCur) bits.push('pag. ' + b.pageCur + (b.pageTot ? ' di ' + b.pageTot : ''));
+    const n = norm(b.notes || '');
+    const giaDetto = (!b.volCur || n.includes('vol. ' + b.volCur) || n.includes('vol.' + b.volCur)) &&
+                     (!b.pageCur || n.includes('pag. ' + b.pageCur) || n.includes('pag.' + b.pageCur));
+    if (bits.length && !giaDetto) b.notes = (b.notes ? b.notes + ' · ' : '') + bits.join(', ');
+    if (b.reading === undefined) b.reading = !b.read && !!(b.volCur || b.pageCur);
+    delete b.volTot; delete b.volCur; delete b.pageCur; delete b.pageTot;
+    cambiato = true;
+  }
+  if (cambiato) persist();
+}
+/* l'avanzamento dell'elenco iniziale finisce nelle note, se non c'è già */
+function seedNotes(b) {
+  const bits = [];
+  if (b.vc) bits.push('vol. ' + b.vc + (b.vt ? ' di ' + b.vt : ''));
+  if (b.pc) bits.push('pag. ' + b.pc + (b.pt ? ' di ' + b.pt : ''));
+  if (!bits.length) return b.n || '';
+  const n = norm(b.n || '');
+  const detto = (!b.vc || n.includes('vol. ' + b.vc) || n.includes('vol.' + b.vc)) &&
+                (!b.pc || n.includes('pag. ' + b.pc) || n.includes('pag.' + b.pc));
+  return detto ? (b.n || '') : (b.n ? b.n + ' · ' : '') + bits.join(', ');
+}
+
 function seed() {
   const now = Date.now();
   state.cats = window.SEED.categories.map(c => ({ ...c }));
   state.books = window.SEED.books.map((b, i) => ({
     id: uid() + i, title: b.t, author: b.a || '', cats: b.c.slice(),
     fav: !!b.fav, read: !!b.read, nope: !!b.nope,
-    volTot: b.vt ?? null, volCur: b.vc ?? null, pageCur: b.pc ?? null, pageTot: b.pt ?? null,
-    notes: b.n || '', cover: false, coverUrl: null, created: now - (window.SEED.books.length - i) * 1000, updated: now
+    reading: !b.read && !!(b.vc || b.pc),
+    volumes: [], notes: seedNotes(b), cover: false, coverUrl: null, created: now - (window.SEED.books.length - i) * 1000, updated: now
   }));
   persist();
 }
@@ -201,7 +237,7 @@ const closeSheet = el => { el.hidden = true; if (!$$('.sheet').some(s => !s.hidd
 function bookState(b) {
   if (b.nope) return 'nope';
   if (b.read) return 'read';
-  if (b.volCur || b.pageCur) return 'reading';
+  if (b.reading) return 'reading';
   return 'todo';
 }
 /* "preferito" e "non piaciuto" convivono con letto / in lettura:
@@ -210,15 +246,12 @@ const STATE_TEST = {
   fav:     b => !!b.fav,
   nope:    b => !!b.nope,
   read:    b => !!b.read,
-  reading: b => bookState(b) === 'reading',
+  reading: b => !!b.reading && !b.read && !b.nope,
   todo:    b => bookState(b) === 'todo'
 };
 function progressText(b) {
-  const p = [];
-  if (b.volCur) p.push('vol. ' + b.volCur + (b.volTot ? '/' + b.volTot : ''));
-  else if (b.volTot) p.push(b.volTot + ' vol.');
-  if (b.pageCur) p.push('pag. ' + b.pageCur + (b.pageTot ? '/' + b.pageTot : ''));
-  return p.join(' · ');
+  const n = (b.volumes || []).length;
+  return n ? (n === 1 ? '1 volume' : n + ' volumi') : '';
 }
 function coverGradient(b) {
   const cs = b.cats.map(catById).filter(Boolean);
@@ -240,7 +273,8 @@ function filtered() {
   const terms = q ? q.split(/\s+/) : [];
   let out = state.books.filter(b => {
     if (terms.length) {
-      const hay = norm([b.title, b.author, b.notes, b.cats.map(i => catById(i)?.name).join(' ')].join(' '));
+      const hay = norm([b.title, b.author, b.notes, (b.volumes || []).map(v => v.name).join(' '),
+                        b.cats.map(i => catById(i)?.name).join(' ')].join(' '));
       if (!terms.every(t => hay.includes(t))) return false;
     }
     if (state.f.states.size && ![...state.f.states].some(s => STATE_TEST[s]?.(b))) return false;
@@ -371,17 +405,14 @@ function openBook(id) {
   $('#bookSheetTitle').innerHTML = icon('book') + (b ? ' Modifica scheda' : ' Nuovo libro');
   $('#fTitle').value = b?.title || '';
   $('#fAuthor').value = b?.author || '';
-  $('#fVolTot').value = b?.volTot ?? '';
-  $('#fVolCur').value = b?.volCur ?? '';
-  $('#fPageCur').value = b?.pageCur ?? '';
-  $('#fPageTot').value = b?.pageTot ?? '';
   $('#fNotes').value = b?.notes || '';
   $('#bookDelete').hidden = !b;
 
-  const flags = { fav: !!b?.fav, read: !!b?.read, nope: !!b?.nope };
+  state.editingVols = (b?.volumes || []).map(v => ({ id: v.id, name: v.name, data: undefined }));
+  const flags = { fav: !!b?.fav, reading: !!b?.reading, read: !!b?.read, nope: !!b?.nope };
   $('#bookStates').dataset.flags = JSON.stringify(flags);
   $('#bookCats').dataset.sel = JSON.stringify(b?.cats || []);
-  renderBookFlags(); renderBookCats(); renderCoverPreview(b);
+  renderBookFlags(); renderBookCats(); renderVolumes(); renderCoverPreview(b);
 
   $('#authorsList').innerHTML = [...new Set(state.books.map(x => x.author).filter(Boolean))]
     .sort(collator.compare).map(a => `<option value="${esc(a)}">`).join('');
@@ -393,6 +424,7 @@ function renderBookFlags() {
   const f = bookFlags();
   const items = [
     { id: 'fav', label: 'Preferito', ic: 'heart-fill', color: '#e880ac' },
+    { id: 'reading', label: 'In lettura', ic: 'bookmark', color: '#c49bdd' },
     { id: 'read', label: 'Letto', ic: 'book', color: '#6bb7dd' },
     { id: 'nope', label: 'Non mi è piaciuto', ic: 'heart-broken', color: '#a893b5' }
   ];
@@ -409,6 +441,25 @@ function renderBookCats() {
       style="background:${esc(c.color)}${on ? '' : '80'}">${icon(c.icon)} ${esc(c.name)}${on ? ' ' + icon('check') : ''}</button>`;
   }).join('') + `<button type="button" class="chip" data-newcat="1">${icon('plus')} Nuova</button>`;
 }
+/* ---- volumi della serie: copertina + nome, uno per riga ---- */
+function renderVolumes() {
+  const list = $('#volList');
+  list.innerHTML = state.editingVols.map((v, i) => {
+    const img = v.data !== undefined ? v.data : Covers.get(v.id);
+    return `<div class="volrow" data-vol="${i}">
+      <button type="button" class="volrow__cover" data-volpic="${i}"
+              aria-label="Copertina del volume">
+        ${img ? `<img src="${img}" alt="">` : icon('image', 'icon')}
+      </button>
+      <input type="text" class="input volrow__name" data-volname="${i}"
+             value="${esc(v.name)}" placeholder="Nome del volume">
+      <button type="button" class="icon-btn icon-btn--ghost" data-voldel="${i}"
+              aria-label="Elimina volume">${icon('trash')}</button>
+    </div>`;
+  }).join('') || `<p class="hint hint--empty">Nessun volume. Aggiungili qui sotto: per ognuno
+    puoi mettere la copertina e il nome.</p>`;
+}
+
 function renderCoverPreview(b) {
   const box = $('#coverPreview');
   const data = (state.editingCover !== undefined ? state.editingCover : (b ? Covers.get(b.id) : null))
@@ -424,16 +475,22 @@ function renderCoverPreview(b) {
 async function saveBook() {
   const title = $('#fTitle').value.trim();
   if (!title) { toast('Serve almeno il titolo'); $('#fTitle').focus(); return; }
-  const num = v => { const n = parseInt(v, 10); return Number.isFinite(n) && n >= 0 ? n : null; };
   const f = bookFlags();
   let b = state.books.find(x => x.id === state.editing);
   const isNew = !b;
-  if (isNew) { b = { id: uid(), created: Date.now(), cover: false }; state.books.push(b); }
+  if (isNew) { b = { id: uid(), created: Date.now(), cover: false, volumes: [] }; state.books.push(b); }
+  // volumi tolti dall'elenco: via anche le loro copertine
+  for (const v of (b.volumes || []))
+    if (!state.editingVols.some(x => x.id === v.id)) await Covers.del(v.id);
+  for (const v of state.editingVols) {
+    if (v.data !== undefined) {
+      if (v.data) await Covers.set(v.id, v.data); else await Covers.del(v.id);
+    }
+  }
   Object.assign(b, {
     title, author: $('#fAuthor').value.trim(), cats: bookCatsSel(),
-    fav: !!f.fav, read: !!f.read, nope: !!f.nope,
-    volTot: num($('#fVolTot').value), volCur: num($('#fVolCur').value),
-    pageCur: num($('#fPageCur').value), pageTot: num($('#fPageTot').value),
+    fav: !!f.fav, reading: !!f.reading, read: !!f.read, nope: !!f.nope,
+    volumes: state.editingVols.map(v => ({ id: v.id, name: v.name.trim(), cover: !!Covers.get(v.id) })),
     notes: $('#fNotes').value.trim(), updated: Date.now()
   });
   if (state.editingCover !== undefined) {
@@ -731,6 +788,8 @@ function wire() {
     f[k] = !f[k];
     if (k === 'nope' && f.nope) f.fav = false;
     if (k === 'fav' && f.fav) f.nope = false;
+    if (k === 'read' && f.read) f.reading = false;      // finito: non è più in lettura
+    if (k === 'reading' && f.reading) f.read = false;
     $('#bookStates').dataset.flags = JSON.stringify(f);
     renderBookFlags();
   });
@@ -753,6 +812,31 @@ function wire() {
     } catch { toast('Immagine non leggibile'); }
     e.target.value = '';
   });
+  /* --- volumi della serie --- */
+  $('#volAdd').addEventListener('click', () => {
+    state.editingVols.push({ id: 'v' + uid(), name: '', data: undefined });
+    renderVolumes();
+    const last = $$('.volrow__name').pop();
+    if (last) last.focus();
+  });
+  $('#volList').addEventListener('input', e => {
+    const inp = e.target.closest('[data-volname]'); if (!inp) return;
+    state.editingVols[+inp.dataset.volname].name = inp.value;   // niente ridisegno: perderebbe il cursore
+  });
+  $('#volList').addEventListener('click', e => {
+    const pic = e.target.closest('[data-volpic]');
+    if (pic) { state.volPicking = +pic.dataset.volpic; $('#volCoverInput').click(); return; }
+    const del = e.target.closest('[data-voldel]');
+    if (del) { state.editingVols.splice(+del.dataset.voldel, 1); renderVolumes(); }
+  });
+  $('#volCoverInput').addEventListener('change', async e => {
+    const file = e.target.files[0], i = state.volPicking;
+    e.target.value = '';
+    if (!file || i == null || !state.editingVols[i]) return;
+    try { state.editingVols[i].data = await processImage(file); renderVolumes(); }
+    catch { toast('Immagine non leggibile'); }
+  });
+
   $('#coverRemove').addEventListener('click', () => {
     state.editingCover = null;
     state.editingCoverUrl = null;
@@ -762,6 +846,7 @@ function wire() {
     const b = state.books.find(x => x.id === state.editing); if (!b) return;
     if (!await confirmBox('Eliminare il libro?', `«${b.title}» verrà rimosso dall'archivio.`, 'Elimina')) return;
     await Covers.del(b.id);
+    for (const v of (b.volumes || [])) await Covers.del(v.id);
     state.books = state.books.filter(x => x.id !== b.id);
     persist(); render(); closeSheet($('#sheetBook')); toast('Libro eliminato');
   });

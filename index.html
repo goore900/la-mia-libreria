@@ -227,24 +227,14 @@
         <datalist id="authorsList"></datalist>
       </label>
 
-      <div class="grid2">
-        <label class="field">
-          <span class="field__label">Volumi totali</span>
-          <input type="number" class="input" id="fVolTot" min="0" step="1" inputmode="numeric" placeholder="—">
-        </label>
-        <label class="field">
-          <span class="field__label">Volume attuale</span>
-          <input type="number" class="input" id="fVolCur" min="0" step="1" inputmode="numeric" placeholder="—">
-        </label>
-        <label class="field">
-          <span class="field__label">Pagina attuale</span>
-          <input type="number" class="input" id="fPageCur" min="0" step="1" inputmode="numeric" placeholder="—">
-        </label>
-        <label class="field">
-          <span class="field__label">Pagine totali</span>
-          <input type="number" class="input" id="fPageTot" min="0" step="1" inputmode="numeric" placeholder="—">
-        </label>
-      </div>
+      <fieldset class="fgroup fgroup--fs">
+        <legend class="fgroup__title">Volumi della serie</legend>
+        <div class="vollist" id="volList"></div>
+        <button type="button" class="btn btn--soft btn--block" id="volAdd">
+          <svg class="icon"><use href="#i-plus"/></svg> Aggiungi volume
+        </button>
+        <input type="file" id="volCoverInput" accept="image/*" hidden>
+      </fieldset>
 
       <fieldset class="fgroup fgroup--fs">
         <legend class="fgroup__title">Stato</legend>

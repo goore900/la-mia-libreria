@@ -1,7 +1,7 @@
 # 🌸 La Mia Libreria
 
 App mobile per tenere l'archivio dei propri libri: categorie personalizzabili, preferiti,
-letti, non piaciuti, avanzamento (volume e pagina), copertine, ricerca e filtri.
+letti, non piaciuti, volumi delle serie con copertina, ricerca e filtri.
 Palette pastello lilla / rosa / celeste su bianco, icone a fiori, stelle e cuoricini.
 
 L'app è una **PWA**: si apre dal browser del telefono e si può installare nella schermata
@@ -69,9 +69,17 @@ sue categorie), e i badge indicano 💗 preferito, 📖 letto, 💔 non piaciuto
 ### La scheda del libro
 
 Tocca un libro per aprirlo e modificarlo: immagine di copertina (dalla galleria o dalla
-fotocamera, viene ridimensionata e salvata sul telefono), titolo, autrice, volumi totali,
-volume attuale, pagina attuale, pagine totali, stato, categorie e note.
-Il tasto ➕ in basso aggiunge un libro nuovo.
+fotocamera, viene ridimensionata e salvata sul telefono), titolo, autrice, volumi della
+serie, stato, categorie e note. Il tasto ➕ in basso aggiunge un libro nuovo.
+
+**Volumi della serie**: sotto l'autrice si aggiungono i volumi uno per riga, ognuno con la
+sua **copertina** (si tocca il riquadro a sinistra) e il suo **nome**. Il cestino elimina la
+riga. Le modifiche ai volumi si salvano con *Salva* insieme al resto della scheda, e
+annullando non viene toccato nulla. Sulla card compare il conteggio («3 volumi») e i nomi
+dei volumi sono compresi nella ricerca.
+
+**Stato**: preferito, in lettura, letto, non mi è piaciuto. *Letto* e *in lettura* si
+escludono a vicenda, come *preferito* e *non mi è piaciuto*.
 
 ### Categorie
 
@@ -114,8 +122,13 @@ L'app parte già con **133 libri** e **7 categorie** prese dalla lista di parten
 
 I titoli che comparivano in più elenchi (per esempio *Winter Fe'*, *Il cuore del lupo*,
 *Storm and Sea*, *The Edge of Darkness*) sono un libro solo con più categorie, e le note
-dell'elenco originale («quando esce il vol. 3?», «vol. 2 a pag. 83», …) sono state
-conservate nel campo *Note* insieme a volume e pagina di avanzamento.
+dell'elenco originale («quando esce il vol. 3?», «vol. 2 a pag. 83», …) sono conservate nel
+campo *Note*, dove finisce anche il punto a cui era arrivata la lettura.
+
+Chi aveva già la versione con i campi numerici (volumi totali, volume attuale, pagina
+attuale e pagine totali) non perde nulla: al primo avvio quei valori vengono riversati
+nelle note, se non erano già scritti lì, e i libri lasciati a metà vengono contrassegnati
+come *in lettura*.
 
 ---
 
