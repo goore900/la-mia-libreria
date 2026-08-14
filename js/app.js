@@ -122,6 +122,104 @@ const Auth = (() => {
   };
 })();
 
+/* ------------------------------------------------- copertine da internet
+   Due fonti pubbliche e senza registrazione: Google Books e Open Library.
+   Le immagini vengono scaricate dal telefono, non passano da nessun server
+   dell'app, e restano salvate solo sul dispositivo. */
+const Online = (() => {
+  const GOOGLE = 'https://www.googleapis.com/books/v1/volumes';
+  const OPENLIB = 'https://openlibrary.org/search.json';
+
+  // Google restituisce link http e con l'angolo "piegato": vanno sistemati,
+  // altrimenti su un sito https il browser li blocca come contenuto misto
+  const fixGoogle = u => String(u).replace(/^http:/, 'https:')
+    .replace(/&edge=curl/, '').replace(/&zoom=\d/, '&zoom=2');
+
+  // quando Google dice "basta", per un po' non glielo si chiede più
+  let googleBlockedUntil = 0;
+
+  const words = s => norm(s).replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 2);
+
+  /* quanto un risultato somiglia al libro cercato (0-1) */
+  function score(book, r) {
+    const want = words(book.title), got = words(r.title);
+    if (!want.length || !got.length) return 0;
+    const hit = want.filter(w => got.includes(w)).length / want.length;
+    const surname = words(book.author).pop();
+    const authorOk = surname && norm(r.author || '').includes(surname);
+    return Math.min(1, hit + (authorOk ? 0.25 : 0));
+  }
+
+  async function askGoogle(title, author) {
+    if (Date.now() < googleBlockedUntil) return [];
+    const q = author ? `intitle:${title} inauthor:${author}` : title;
+    const url = `${GOOGLE}?q=${encodeURIComponent(q)}&maxResults=8&printType=books&country=IT`;
+    const res = await fetch(url);
+    if (res.status === 429) { googleBlockedUntil = Date.now() + 10 * 60 * 1000; throw new Error('quota'); }
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.items || []).map(it => {
+      const v = it.volumeInfo || {};
+      const img = v.imageLinks || {};
+      const src = img.thumbnail || img.smallThumbnail;
+      return src ? { title: v.title || '', author: (v.authors || []).join(', '),
+                     year: (v.publishedDate || '').slice(0, 4),
+                     thumb: fixGoogle(src), from: 'Google Books' } : null;
+    }).filter(Boolean);
+  }
+
+  async function askOpenLibrary(title, author) {
+    const p = new URLSearchParams({ limit: '8',
+      fields: 'title,author_name,cover_i,first_publish_year' });
+    if (author) { p.set('title', title); p.set('author', author); } else p.set('q', title);
+    const res = await fetch(`${OPENLIB}?${p}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.docs || []).filter(d => d.cover_i).map(d => ({
+      title: d.title || '', author: (d.author_name || []).join(', '),
+      year: String(d.first_publish_year || ''),
+      thumb: `https://covers.openlibrary.org/b/id/${d.cover_i}-L.jpg`,
+      from: 'Open Library'
+    }));
+  }
+
+  return {
+    /* cerca su entrambe le fonti; se una non risponde si usa l'altra */
+    async search(title, author) {
+      const out = await Promise.allSettled([askGoogle(title, author), askOpenLibrary(title, author)]);
+      if (out.every(r => r.status === 'rejected')) {
+        const quota = out.some(r => r.reason && /quota/.test(r.reason.message));
+        throw new Error(quota ? 'quota' : 'rete');
+      }
+      const list = out.flatMap(r => r.status === 'fulfilled' ? r.value : []);
+      const seen = new Set();
+      return list.filter(r => !seen.has(r.thumb) && seen.add(r.thumb));
+    },
+
+    /* il miglior risultato, solo se somiglia davvero al libro */
+    async best(book) {
+      const list = await this.search(book.title, book.author);
+      let top = null, topScore = 0;
+      for (const r of list) { const s = score(book, r); if (s > topScore) { top = r; topScore = s; } }
+      return topScore >= 0.7 ? top : null;
+    },
+
+    googleBlocked: () => Date.now() < googleBlockedUntil,
+
+    /* prova a portarsi l'immagine sul dispositivo; se il sito non lo permette
+       (mancano le intestazioni CORS) restituisce null e si salva solo il link */
+    async download(url) {
+      try {
+        const res = await fetch(url, { mode: 'cors' });
+        if (!res.ok) return null;
+        const blob = await res.blob();
+        if (!blob.type.startsWith('image/') || blob.size > 4e6) return null;
+        return await processImage(blob);
+      } catch { return null; }
+    }
+  };
+})();
+
 /* ---------------------------------------------------------------- stato */
 const PASTELS = ['#ffd7e6','#f7dcf2','#eadffb','#dee5fb','#c9e6fb','#cdeeee','#d6f0e0',
                  '#eaf3cf','#fdf3c8','#ffe3c8','#ffd8d0','#f0e2d6','#e4e0f7','#f6d9e9'];
@@ -139,7 +237,7 @@ const state = {
   books: [], cats: [],
   settings: { view: '6', sort: 'title' },
   f: { q: '', states: new Set(), cats: new Set(), catsAll: false, author: '' },
-  editing: null, editingCover: undefined, editingCat: null
+  editing: null, editingCover: undefined, editingCoverUrl: undefined, editingCat: null
 };
 
 function bootData() {
@@ -157,7 +255,7 @@ function seed() {
     id: uid() + i, title: b.t, author: b.a || '', cats: b.c.slice(),
     fav: !!b.fav, read: !!b.read, nope: !!b.nope,
     volTot: b.vt ?? null, volCur: b.vc ?? null, pageCur: b.pc ?? null, pageTot: b.pt ?? null,
-    notes: b.n || '', cover: false, created: now - (window.SEED.books.length - i) * 1000, updated: now
+    notes: b.n || '', cover: false, coverUrl: null, created: now - (window.SEED.books.length - i) * 1000, updated: now
   }));
   persist();
 }
@@ -274,7 +372,7 @@ function renderBooks() {
   $('#empty').hidden = list.length > 0;
 
   wrap.innerHTML = list.map(b => {
-    const cov = Covers.get(b.id);
+    const cov = Covers.get(b.id) || b.coverUrl || null;
     const cats = b.cats.map(catById).filter(Boolean);
     const strip = cats.length
       ? `<div class="card__strip">${cats.slice(0, 4).map(c => `<span style="background:${esc(c.color)}"></span>`).join('')}</div>` : '';
@@ -354,6 +452,7 @@ function openBook(id) {
   const b = id ? state.books.find(x => x.id === id) : null;
   state.editing = b ? b.id : null;
   state.editingCover = undefined;
+  state.editingCoverUrl = undefined;
   $('#bookSheetTitle').innerHTML = icon('book') + (b ? ' Modifica scheda' : ' Nuovo libro');
   $('#fTitle').value = b?.title || '';
   $('#fAuthor').value = b?.author || '';
@@ -397,7 +496,8 @@ function renderBookCats() {
 }
 function renderCoverPreview(b) {
   const box = $('#coverPreview');
-  const data = state.editingCover !== undefined ? state.editingCover : (b ? Covers.get(b.id) : null);
+  const data = (state.editingCover !== undefined ? state.editingCover : (b ? Covers.get(b.id) : null))
+    || (state.editingCoverUrl !== undefined ? state.editingCoverUrl : (b ? b.coverUrl : null));
   const fake = { cats: bookCatsSel() };
   box.style.background = coverGradient(fake);
   box.innerHTML = data
@@ -425,6 +525,7 @@ async function saveBook() {
     if (state.editingCover) { await Covers.set(b.id, state.editingCover); b.cover = true; }
     else { await Covers.del(b.id); b.cover = false; }
   }
+  if (state.editingCoverUrl !== undefined) b.coverUrl = state.editingCoverUrl;
   persist(); render();
   closeSheet($('#sheetBook'));
   toast(isNew ? 'Libro aggiunto' : 'Scheda aggiornata');
@@ -452,6 +553,103 @@ async function processImage(file) {
   ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
   ctx.drawImage(img, 0, 0, w, h);
   return cv.toDataURL('image/jpeg', 0.78);
+}
+
+/* ------------------------------------------------ ricerca copertine (UI) */
+function openCoverSearch() {
+  const b = state.books.find(x => x.id === state.editing);
+  const q = [$('#fTitle').value.trim(), $('#fAuthor').value.trim()].filter(Boolean).join(' ');
+  $('#coverQuery').value = q || (b ? b.title : '');
+  $('#coverResults').innerHTML = '';
+  openSheet('sheetCoverSearch');
+  if ($('#coverQuery').value) runCoverSearch();
+}
+function coverState(msg, spin) {
+  const el = $('#coverState');
+  el.hidden = !msg;
+  el.innerHTML = msg ? (spin ? '<span class="spinner"></span> ' : '') + esc(msg) : '';
+}
+async function runCoverSearch() {
+  const q = $('#coverQuery').value.trim();
+  if (!q) return;
+  $('#coverResults').innerHTML = '';
+  coverState('Sto cercando…', true);
+  try {
+    const list = await Online.search(q, '');
+    coverState(list.length ? '' : 'Nessuna copertina trovata. Prova con meno parole, ' +
+      'per esempio solo il titolo senza il numero del volume.');
+    $('#coverResults').innerHTML = list.map((r, i) => `
+      <button type="button" class="coverhit" data-hit="${i}">
+        <img src="${esc(r.thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer">
+        <span class="coverhit__t">${esc(r.title)}</span>
+        <span class="coverhit__s">${esc([r.author, r.year].filter(Boolean).join(' · '))}</span>
+        <span class="coverhit__from">${esc(r.from)}</span>
+      </button>`).join('');
+    $('#coverResults').dataset.list = JSON.stringify(list);
+  } catch (e) {
+    coverState(e.message === 'quota'
+      ? 'Google Books ha raggiunto il limite di ricerche: riprova fra un po\'.'
+      : 'Non riesco a collegarmi: controlla la connessione.');
+  }
+}
+async function pickCover(i) {
+  const list = JSON.parse($('#coverResults').dataset.list || '[]');
+  const r = list[i]; if (!r) return;
+  coverState('Sto scaricando la copertina…', true);
+  const data = await Online.download(r.thumb);
+  if (data) { state.editingCover = data; state.editingCoverUrl = null; }
+  else { state.editingCover = null; state.editingCoverUrl = r.thumb; }   // solo il link
+  renderCoverPreview(state.books.find(x => x.id === state.editing));
+  coverState('');
+  closeSheet($('#sheetCoverSearch'));
+  toast(data ? 'Copertina scelta' : 'Copertina collegata (serve internet per vederla)');
+}
+
+/* ricerca in blocco per i libri senza copertina */
+let fetching = false;
+async function fetchMissingCovers() {
+  const todo = state.books.filter(b => !Covers.get(b.id) && !b.coverUrl);
+  if (!todo.length) { toast('Tutti i libri hanno già una copertina'); return; }
+  fetching = true;
+  $('#btnFetchCovers').disabled = true;
+  $('#btnFetchStop').hidden = false;
+  let found = 0, i = 0;
+  const show = m => { const el = $('#fetchState'); el.hidden = false; el.innerHTML = m; };
+  for (const b of todo) {
+    if (!fetching) break;
+    i++;
+    show(`<span class="spinner"></span> ${i} di ${todo.length} — ${found} copertine trovate`);
+    try {
+      const r = await Online.best(b);
+      if (r) {
+        const data = await Online.download(r.thumb);
+        if (data) { await Covers.set(b.id, data); b.cover = true; }
+        else b.coverUrl = r.thumb;
+        b.updated = Date.now();
+        found++;
+        persist();
+        if (found % 5 === 0) renderBooks();
+      }
+    } catch (e) {
+      show(e.message === 'quota'
+        ? `Fermato: Google Books ha raggiunto il limite di ricerche. Trovate ${found} copertine, riprova più tardi.`
+        : `Fermato: connessione assente. Trovate ${found} copertine.`);
+      fetching = false;
+      $('#btnFetchCovers').disabled = false;
+      $('#btnFetchStop').hidden = true;
+      persist(); render(); renderStats();
+      return;
+    }
+    await new Promise(r => setTimeout(r, 250));   // una richiesta alla volta, senza fretta
+  }
+  const done = fetching;
+  fetching = false;
+  $('#btnFetchCovers').disabled = false;
+  $('#btnFetchStop').hidden = true;
+  show(`${done ? 'Finito' : 'Interrotto'}: ${found} copertine trovate su ${todo.length} libri.` +
+       (found < todo.length ? ' Per gli altri puoi cercarle dalla scheda del libro.' : '') +
+       (Online.googleBlocked() ? ' Google Books ha raggiunto il limite di ricerche: ho continuato solo con Open Library.' : ''));
+  persist(); render(); renderStats();
 }
 
 /* ------------------------------------------------------------- categorie */
@@ -732,12 +930,22 @@ function wire() {
     const file = e.target.files[0]; if (!file) return;
     try {
       state.editingCover = await processImage(file);
+      state.editingCoverUrl = null;
       renderCoverPreview(state.books.find(x => x.id === state.editing));
     } catch { toast('Immagine non leggibile'); }
     e.target.value = '';
   });
+  $('#coverSearch').addEventListener('click', openCoverSearch);
+  $('#coverSearchForm').addEventListener('submit', e => { e.preventDefault(); runCoverSearch(); });
+  $('#coverResults').addEventListener('click', e => {
+    const hit = e.target.closest('[data-hit]'); if (hit) pickCover(+hit.dataset.hit);
+  });
+  $('#btnFetchCovers').addEventListener('click', fetchMissingCovers);
+  $('#btnFetchStop').addEventListener('click', () => { fetching = false; });
+
   $('#coverRemove').addEventListener('click', () => {
     state.editingCover = null;
+    state.editingCoverUrl = null;
     renderCoverPreview(state.books.find(x => x.id === state.editing));
   });
   $('#bookDelete').addEventListener('click', async () => {
