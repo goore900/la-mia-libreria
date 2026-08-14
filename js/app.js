@@ -927,8 +927,43 @@ function wire() {
   });
 }
 
-/* ------------------------------------------------------------------ avvio */
+/* ------------------------------------------------------------------ avvio
+   index.html e app.js devono venire dalla stessa pubblicazione: se la cache ne
+   ha tenuto uno vecchio l'app si romperebbe, quindi si accorge del disallineamento,
+   svuota la cache e ricarica una volta sola. Alzare il numero in entrambi i file. */
+const APP_VERSION = '2';
+
+async function ripulisciCacheVecchia() {
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+    if (window.caches) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  } catch {}
+  location.reload();
+}
+
+function versioniAllineate() {
+  const htmlV = document.body.dataset.version;
+  if (htmlV === APP_VERSION) { try { sessionStorage.removeItem('lml.riparo'); } catch {} return true; }
+  let giaProvato = false;
+  try { giaProvato = sessionStorage.getItem('lml.riparo') === '1'; } catch {}
+  if (!giaProvato) {
+    try { sessionStorage.setItem('lml.riparo', '1'); } catch {}
+    ripulisciCacheVecchia();
+  } else {
+    document.body.innerHTML = '<div class="ricarica"><p>L\'app è stata aggiornata.</p>' +
+      '<p>Chiudila del tutto e riaprila per completare l\'aggiornamento.</p></div>';
+  }
+  return false;
+}
+
 (async function init() {
+  if (!versioniAllineate()) return;
   bootData();
   await Covers.init();
   wire();

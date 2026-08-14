@@ -148,6 +148,15 @@ dist/                   la-mia-libreria.html: tutta l'app in un file solo
 
 Nessuna dipendenza esterna, nessun passaggio di build: sono file statici.
 
+**Aggiornamenti.** Il service worker prova sempre la rete e usa la cache solo come
+riserva, così una nuova pubblicazione arriva al riavvio successivo invece di restare
+indietro. In più `index.html` e `js/app.js` dichiarano un numero di versione che deve
+coincidere (`<body data-version>` e la costante `APP_VERSION`): se il dispositivo si
+ritrova i due file di pubblicazioni diverse, l'app se ne accorge, svuota cache e service
+worker e ricarica una volta sola. **Alzare quel numero in entrambi i file a ogni
+pubblicazione che tocchi sia l'HTML sia il JavaScript**, e alzare anche il nome della
+cache in `sw.js`.
+
 **Dove finiscono i dati:** libri, categorie, impostazioni e stato di sblocco in
 `localStorage`; le copertine in `IndexedDB`, con ripiego su `localStorage` dove non è
 disponibile.
