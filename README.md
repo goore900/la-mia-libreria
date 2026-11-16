@@ -53,6 +53,13 @@ In alto a destra si sceglie come vedere i libri, con due pulsanti:
 |---|---|
 | ☰ Elenco | riga per riga, con autrice, avanzamento e categorie |
 | ▦ Griglia | 6 copertine per riga, con il titolo sotto |
+| ☰̶ Per categorie | elenco diviso in sezioni, una per categoria |
+
+Nella vista **per categorie** le sezioni seguono l'ordine che hai dato alle categorie, ognuna
+mostra quanti libri contiene e si apre o chiude toccandone l'intestazione (lo stato resta
+salvato). Un libro che sta in più categorie compare in ognuna; quelli senza categoria
+finiscono in fondo sotto *Senza categoria*, e le sezioni vuote non vengono mostrate.
+Ricerca e filtri valgono anche qui.
 
 I libri senza copertina mostrano un monogramma su sfondo pastello (il colore viene dalle
 sue categorie), e i badge indicano 💗 preferito, 📖 letto, 💔 non piaciuto.
@@ -108,7 +115,8 @@ partenza; *Cancella tutto* svuota l'archivio.
 
 ## Elenco iniziale
 
-L'app parte già con **133 libri** e **7 categorie** prese dalla lista di partenza:
+L'app parte già con **133 libri** e **9 categorie** (sette dalla lista di partenza, più due
+vuote per i nuovi acquisti):
 
 | Categoria | Libri |
 |---|---|
@@ -119,6 +127,8 @@ L'app parte già con **133 libri** e **7 categorie** prese dalla lista di parten
 | Sospesi (non finiti) | 14 |
 | Sospesi — non so se finirli | 18 |
 | Autrici da seguire | 8 |
+| Nuovi Kindle Unlimited | 0 |
+| Nuovi a pagamento | 0 |
 
 I titoli che comparivano in più elenchi (per esempio *Winter Fe'*, *Il cuore del lupo*,
 *Storm and Sea*, *The Edge of Darkness*) sono un libro solo con più categorie, e le note

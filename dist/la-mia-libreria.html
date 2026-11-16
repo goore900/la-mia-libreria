@@ -258,6 +258,22 @@ select.input{appearance:none;
 .books[data-cols="6"] .badge{width:18px;height:18px}
 .books[data-cols="6"] .badge .icon{width:11px;height:11px}
 
+/* elenco diviso per categorie */
+.groups{display:flex;flex-direction:column;gap:16px}
+.group{display:block}
+.group__head{display:flex;align-items:center;gap:9px;width:100%;padding:11px 14px;
+  border-radius:var(--r-m);border:1px solid var(--bordo);box-shadow:var(--ombra-s);
+  font-size:14.5px;font-weight:800;color:var(--testo);text-align:left}
+.group__head:active{transform:scale(.99)}
+.group__icon{width:19px;height:19px;flex:none}
+.group__name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.group__n{flex:none;font-size:12px;font-weight:800;color:var(--testo-soft);
+  background:rgba(255,255,255,.65);border-radius:999px;padding:2px 9px}
+.group__chev{width:19px;height:19px;flex:none;color:var(--testo-soft);transition:transform .2s ease}
+.group.is-closed .group__chev{transform:rotate(-90deg)}
+.group.is-closed .books{display:none}
+.group .books{margin-top:9px}
+
 /* vista elenco */
 .is-list .card{flex-direction:row;align-items:stretch;border-radius:var(--r-m)}
 .is-list .card__cover{width:62px;aspect-ratio:2/3;flex:none;border-radius:0}
@@ -420,7 +436,7 @@ body.is-sorting .catrow:not(.is-dragging){opacity:.75}
 
 </style>
 </head>
-<body data-version="2">
+<body data-version="3">
 
 <!-- ============ Sprite icone: fiori, stelle, cuoricini ============ -->
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
@@ -469,6 +485,7 @@ body.is-sorting .catrow:not(.is-dragging){opacity:.75}
   <symbol id="i-eye" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.9"/></g></symbol>
   <symbol id="i-eye-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 4l16 16"/><path d="M9.6 5.9A9.4 9.4 0 0 1 12 5.8c6 0 9.5 6.2 9.5 6.2a17 17 0 0 1-3.3 4M6.4 8.1A16.6 16.6 0 0 0 2.5 12S6 18.2 12 18.2c1.2 0 2.3-.2 3.3-.6"/><path d="M10 10a2.9 2.9 0 0 0 4 4"/></g></symbol>
   <symbol id="i-palette" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3.5a8.5 8.5 0 0 0 0 17c1.3 0 2-.9 2-1.9 0-1.6-1.2-1.9-1.2-3 0-.9.7-1.6 1.7-1.6h1.6a4.4 4.4 0 0 0 4.4-4.4c0-3.4-3.6-6.1-8.5-6.1z"/><circle cx="8" cy="10" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="7.6" r="1.1" fill="currentColor" stroke="none"/><circle cx="16" cy="9.6" r="1.1" fill="currentColor" stroke="none"/></g></symbol>
+  <symbol id="i-list-groups" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3.5 4.5h10"/><path d="M7 9h13.5"/><path d="M7 12.5h13.5"/><path d="M3.5 17h10"/><path d="M7 21h13.5"/></g></symbol>
   <symbol id="i-grip" viewBox="0 0 24 24"><g fill="currentColor"><circle cx="9" cy="6" r="1.55"/><circle cx="15" cy="6" r="1.55"/><circle cx="9" cy="12" r="1.55"/><circle cx="15" cy="12" r="1.55"/><circle cx="9" cy="18" r="1.55"/><circle cx="15" cy="18" r="1.55"/></g></symbol>
   <symbol id="i-tag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3.5 11.4V4.5a1 1 0 0 1 1-1h6.9c.3 0 .5.1.7.3l8.1 8.1a1 1 0 0 1 0 1.4l-6.9 6.9a1 1 0 0 1-1.4 0L3.8 12.1a1 1 0 0 1-.3-.7z"/><circle cx="8" cy="8" r="1.4"/></g></symbol>
 </svg>
@@ -537,6 +554,7 @@ body.is-sorting .catrow:not(.is-dragging){opacity:.75}
       <div class="viewswitch" role="group" aria-label="Visualizzazione">
         <button class="viewswitch__btn" data-view="list" aria-label="Vista a elenco" title="Elenco"><svg class="icon"><use href="#i-list"/></svg></button>
         <button class="viewswitch__btn" data-view="6" aria-label="Vista a griglia" title="Griglia"><svg class="icon"><use href="#i-grid"/></svg></button>
+        <button class="viewswitch__btn" data-view="groups" aria-label="Elenco diviso per categorie" title="Per categorie"><svg class="icon"><use href="#i-list-groups"/></svg></button>
       </div>
     </div>
 
@@ -791,7 +809,8 @@ body.is-sorting .catrow:not(.is-dragging){opacity:.75}
    ============================================================ */
 (function () {
   const ATT = 'attesa', AUT = 'autrici', LET = 'letti', FIN = 'dafinire',
-        FOR = 'forse', PRE = 'preferiti', SOS = 'sospesi';
+        FOR = 'forse', PRE = 'preferiti', SOS = 'sospesi',
+        KU = 'ku', PAG = 'pagamento';
 
   const categories = [
     { id: ATT, name: 'In attesa di nuove uscite', color: '#c9e6fb', icon: 'cloud' },
@@ -800,7 +819,9 @@ body.is-sorting .catrow:not(.is-dragging){opacity:.75}
     { id: PRE, name: 'Preferiti finiti',          color: '#ffd7e6', icon: 'heart' },
     { id: SOS, name: 'Sospesi (non finiti)',      color: '#dee5fb', icon: 'sparkle' },
     { id: FOR, name: 'Sospesi — non so se finirli', color: '#eadffb', icon: 'moon' },
-    { id: AUT, name: 'Autrici da seguire',        color: '#f7dcf2', icon: 'butterfly' }
+    { id: AUT, name: 'Autrici da seguire',        color: '#f7dcf2', icon: 'butterfly' },
+    { id: KU,  name: 'Nuovi Kindle Unlimited',    color: '#cdeeee', icon: 'star' },
+    { id: PAG, name: 'Nuovi a pagamento',         color: '#fdf3c8', icon: 'crown' }
   ];
 
   const books = [
@@ -1119,9 +1140,23 @@ function bootData() {
   state.cats  = load(K.cats, null);
   state.settings = Object.assign({ view: '6', sort: 'title' }, load(K.set, {}));
   // le viste 4 e 8 non esistono più: chi le aveva scelte passa alla griglia
-  if (state.settings.view !== 'list') state.settings.view = '6';
+  if (!['list', '6', 'groups'].includes(state.settings.view)) state.settings.view = '6';
+  if (!Array.isArray(state.settings.closed)) state.settings.closed = [];
   if (!state.books || !state.cats) seed();
-  else migraVolumi();
+  else { migraVolumi(); migraCategorieNuove(); }
+}
+
+/* Categorie aggiunte dopo il primo rilascio: vanno portate anche sulle librerie
+   già in uso, una volta sola — se poi vengono eliminate non devono ricomparire. */
+const CAT_AGGIUNTE = ['ku', 'pagamento'];
+function migraCategorieNuove() {
+  if (state.settings.catAggiunte) return;
+  for (const id of CAT_AGGIUNTE) {
+    const c = (window.SEED?.categories || []).find(x => x.id === id);
+    if (c && !state.cats.some(x => x.id === id)) state.cats.push({ ...c });
+  }
+  state.settings.catAggiunte = true;
+  persist();
 }
 
 /* I quattro campi numerici non ci sono più: quello che contenevano finisce nelle note,
@@ -1265,32 +1300,20 @@ function render() {
   renderFilterCount();
 }
 
-function renderBooks() {
-  const list = filtered();
-  const wrap = $('#books');
-  const isList = state.settings.view === 'list';
-  wrap.className = 'books' + (isList ? ' is-list' : '');
-  wrap.dataset.cols = isList ? 'list' : state.settings.view;
-  wrap.style.setProperty('--cols', isList ? 1 : state.settings.view);
-
-  $('#results').textContent = list.length
-    ? `${list.length} libr${list.length === 1 ? 'o' : 'i'}${state.books.length !== list.length ? ' su ' + state.books.length : ''}`
-    : '';
-  $('#empty').hidden = list.length > 0;
-
-  wrap.innerHTML = list.map(b => {
-    // coverUrl: copertine collegate da una versione precedente dell'app, non se ne creano più
-    const cov = Covers.get(b.id) || b.coverUrl || null;
-    const cats = b.cats.map(catById).filter(Boolean);
-    const strip = cats.length
-      ? `<div class="card__strip">${cats.slice(0, 4).map(c => `<span style="background:${esc(c.color)}"></span>`).join('')}</div>` : '';
-    const badges = [
-      b.fav ? `<span class="badge badge--fav">${icon('heart-fill')}</span>` : '',
-      b.read ? `<span class="badge badge--read">${icon('book')}</span>` : '',
-      b.nope ? `<span class="badge badge--nope">${icon('heart-broken')}</span>` : ''
-    ].join('');
-    const prog = progressText(b);
-    return `<button class="card" data-id="${b.id}">
+/* una card, uguale in tutte le viste; in elenco mostra anche le categorie */
+function cardHtml(b, isList) {
+  // coverUrl: copertine collegate da una versione precedente dell'app, non se ne creano più
+  const cov = Covers.get(b.id) || b.coverUrl || null;
+  const cats = b.cats.map(catById).filter(Boolean);
+  const strip = cats.length
+    ? `<div class="card__strip">${cats.slice(0, 4).map(c => `<span style="background:${esc(c.color)}"></span>`).join('')}</div>` : '';
+  const badges = [
+    b.fav ? `<span class="badge badge--fav">${icon('heart-fill')}</span>` : '',
+    b.read ? `<span class="badge badge--read">${icon('book')}</span>` : '',
+    b.nope ? `<span class="badge badge--nope">${icon('heart-broken')}</span>` : ''
+  ].join('');
+  const prog = progressText(b);
+  return `<button class="card" data-id="${b.id}">
       <div class="card__cover" style="background:${coverGradient(b)}">
         ${cov ? `<img src="${cov}" alt="" loading="lazy">`
               : `<span class="card__ph">${icon(coverIcon(b), '')}<b class="card__init">${esc(initials(b.title))}</b></span>`}
@@ -1305,7 +1328,61 @@ function renderBooks() {
             `<span class="minicat" style="background:${esc(c.color)}">${esc(c.name)}</span>`).join('')}</div>` : ''}
       </div>
     </button>`;
+}
+
+function renderBooks() {
+  const list = filtered();
+  const view = state.settings.view;
+
+  $('#results').textContent = list.length
+    ? `${list.length} libr${list.length === 1 ? 'o' : 'i'}${state.books.length !== list.length ? ' su ' + state.books.length : ''}`
+    : '';
+  $('#empty').hidden = list.length > 0;
+
+  if (view === 'groups') { renderGroups(list); return; }
+
+  const wrap = $('#books');
+  const isList = view === 'list';
+  wrap.className = 'books' + (isList ? ' is-list' : '');
+  wrap.dataset.cols = isList ? 'list' : view;
+  wrap.style.setProperty('--cols', isList ? 1 : view);
+  wrap.innerHTML = list.map(b => cardHtml(b, isList)).join('');
+}
+
+/* elenco diviso per categorie: un libro in più categorie compare in ognuna,
+   nell'ordine che hai dato alle categorie; i gruppi si aprono e chiudono. */
+function renderGroups(list) {
+  const wrap = $('#books');
+  wrap.className = 'groups';
+  wrap.dataset.cols = 'groups';
+  wrap.style.removeProperty('--cols');
+
+  const chiusi = new Set(state.settings.closed || []);
+  const gruppi = state.cats.map(c => ({
+    id: c.id, name: c.name, color: c.color, icon: c.icon,
+    libri: list.filter(b => b.cats.includes(c.id))
+  }));
+  const orfani = list.filter(b => !b.cats.some(id => catById(id)));
+  if (orfani.length) gruppi.push({ id: '__senza', name: 'Senza categoria',
+    color: '#ece0f4', icon: 'cloud', libri: orfani });
+
+  const pieni = gruppi.filter(g => g.libri.length);
+  wrap.innerHTML = pieni.map(g => {
+    const closed = chiusi.has(g.id);
+    return `<section class="group${closed ? ' is-closed' : ''}" data-group="${esc(g.id)}">
+      <button type="button" class="group__head" style="background:${esc(g.color)}"
+              aria-expanded="${!closed}">
+        ${icon(g.icon, 'icon group__icon')}
+        <span class="group__name">${esc(g.name)}</span>
+        <span class="group__n">${g.libri.length}</span>
+        ${icon('chevron', 'icon group__chev')}
+      </button>
+      <div class="books is-list" data-cols="list">${g.libri.map(b => cardHtml(b, true)).join('')}</div>
+    </section>`;
   }).join('');
+
+  if (!pieni.length && list.length)
+    wrap.innerHTML = `<p class="hint hint--empty">Nessuna categoria da mostrare.</p>`;
 }
 
 function renderQuickFilters() {
@@ -1511,8 +1588,11 @@ function wireCatDrag() {
 
   const autoScroll = () => {
     if (!drag) return;
+    // solo quando il trascinamento è davvero partito: afferrando una riga vicino
+    // al bordo, altrimenti la lista scorrerebbe da sola a dito fermo
+    if (!drag.moved) { drag.raf = requestAnimationFrame(autoScroll); return; }
     const box = drag.scroller.getBoundingClientRect();
-    const margin = 56, speed = 9;
+    const margin = 44, speed = 9;
     if (drag.y < box.top + margin) drag.scroller.scrollTop -= speed;
     else if (drag.y > box.bottom - margin) drag.scroller.scrollTop += speed;
     drag.raf = requestAnimationFrame(autoScroll);
@@ -1736,6 +1816,17 @@ function wire() {
 
   /* --- libri --- */
   $('#books').addEventListener('click', e => {
+    const head = e.target.closest('.group__head');
+    if (head) {                                  // apre e chiude un gruppo, e se lo ricorda
+      const sez = head.closest('.group'), id = sez.dataset.group;
+      const chiusi = new Set(state.settings.closed || []);
+      chiusi.has(id) ? chiusi.delete(id) : chiusi.add(id);
+      state.settings.closed = [...chiusi];
+      persist();
+      sez.classList.toggle('is-closed');
+      head.setAttribute('aria-expanded', String(!sez.classList.contains('is-closed')));
+      return;
+    }
     const c = e.target.closest('.card'); if (c) openBook(c.dataset.id);
   });
   $('#btnAdd').addEventListener('click', () => openBook(null));
@@ -1890,7 +1981,7 @@ function wire() {
    index.html e app.js devono venire dalla stessa pubblicazione: se la cache ne
    ha tenuto uno vecchio l'app si romperebbe, quindi si accorge del disallineamento,
    svuota la cache e ricarica una volta sola. Alzare il numero in entrambi i file. */
-const APP_VERSION = '2';
+const APP_VERSION = '3';
 
 async function ripulisciCacheVecchia() {
   try {

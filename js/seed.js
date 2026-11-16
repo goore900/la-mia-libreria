@@ -8,7 +8,8 @@
    ============================================================ */
 (function () {
   const ATT = 'attesa', AUT = 'autrici', LET = 'letti', FIN = 'dafinire',
-        FOR = 'forse', PRE = 'preferiti', SOS = 'sospesi';
+        FOR = 'forse', PRE = 'preferiti', SOS = 'sospesi',
+        KU = 'ku', PAG = 'pagamento';
 
   const categories = [
     { id: ATT, name: 'In attesa di nuove uscite', color: '#c9e6fb', icon: 'cloud' },
@@ -17,7 +18,9 @@
     { id: PRE, name: 'Preferiti finiti',          color: '#ffd7e6', icon: 'heart' },
     { id: SOS, name: 'Sospesi (non finiti)',      color: '#dee5fb', icon: 'sparkle' },
     { id: FOR, name: 'Sospesi — non so se finirli', color: '#eadffb', icon: 'moon' },
-    { id: AUT, name: 'Autrici da seguire',        color: '#f7dcf2', icon: 'butterfly' }
+    { id: AUT, name: 'Autrici da seguire',        color: '#f7dcf2', icon: 'butterfly' },
+    { id: KU,  name: 'Nuovi Kindle Unlimited',    color: '#cdeeee', icon: 'star' },
+    { id: PAG, name: 'Nuovi a pagamento',         color: '#fdf3c8', icon: 'crown' }
   ];
 
   const books = [

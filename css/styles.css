@@ -243,6 +243,22 @@ select.input{appearance:none;
 .books[data-cols="6"] .badge{width:18px;height:18px}
 .books[data-cols="6"] .badge .icon{width:11px;height:11px}
 
+/* elenco diviso per categorie */
+.groups{display:flex;flex-direction:column;gap:16px}
+.group{display:block}
+.group__head{display:flex;align-items:center;gap:9px;width:100%;padding:11px 14px;
+  border-radius:var(--r-m);border:1px solid var(--bordo);box-shadow:var(--ombra-s);
+  font-size:14.5px;font-weight:800;color:var(--testo);text-align:left}
+.group__head:active{transform:scale(.99)}
+.group__icon{width:19px;height:19px;flex:none}
+.group__name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.group__n{flex:none;font-size:12px;font-weight:800;color:var(--testo-soft);
+  background:rgba(255,255,255,.65);border-radius:999px;padding:2px 9px}
+.group__chev{width:19px;height:19px;flex:none;color:var(--testo-soft);transition:transform .2s ease}
+.group.is-closed .group__chev{transform:rotate(-90deg)}
+.group.is-closed .books{display:none}
+.group .books{margin-top:9px}
+
 /* vista elenco */
 .is-list .card{flex-direction:row;align-items:stretch;border-radius:var(--r-m)}
 .is-list .card__cover{width:62px;aspect-ratio:2/3;flex:none;border-radius:0}

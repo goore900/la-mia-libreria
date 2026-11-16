@@ -160,9 +160,23 @@ function bootData() {
   state.cats  = load(K.cats, null);
   state.settings = Object.assign({ view: '6', sort: 'title' }, load(K.set, {}));
   // le viste 4 e 8 non esistono più: chi le aveva scelte passa alla griglia
-  if (state.settings.view !== 'list') state.settings.view = '6';
+  if (!['list', '6', 'groups'].includes(state.settings.view)) state.settings.view = '6';
+  if (!Array.isArray(state.settings.closed)) state.settings.closed = [];
   if (!state.books || !state.cats) seed();
-  else migraVolumi();
+  else { migraVolumi(); migraCategorieNuove(); }
+}
+
+/* Categorie aggiunte dopo il primo rilascio: vanno portate anche sulle librerie
+   già in uso, una volta sola — se poi vengono eliminate non devono ricomparire. */
+const CAT_AGGIUNTE = ['ku', 'pagamento'];
+function migraCategorieNuove() {
+  if (state.settings.catAggiunte) return;
+  for (const id of CAT_AGGIUNTE) {
+    const c = (window.SEED?.categories || []).find(x => x.id === id);
+    if (c && !state.cats.some(x => x.id === id)) state.cats.push({ ...c });
+  }
+  state.settings.catAggiunte = true;
+  persist();
 }
 
 /* I quattro campi numerici non ci sono più: quello che contenevano finisce nelle note,
@@ -306,32 +320,20 @@ function render() {
   renderFilterCount();
 }
 
-function renderBooks() {
-  const list = filtered();
-  const wrap = $('#books');
-  const isList = state.settings.view === 'list';
-  wrap.className = 'books' + (isList ? ' is-list' : '');
-  wrap.dataset.cols = isList ? 'list' : state.settings.view;
-  wrap.style.setProperty('--cols', isList ? 1 : state.settings.view);
-
-  $('#results').textContent = list.length
-    ? `${list.length} libr${list.length === 1 ? 'o' : 'i'}${state.books.length !== list.length ? ' su ' + state.books.length : ''}`
-    : '';
-  $('#empty').hidden = list.length > 0;
-
-  wrap.innerHTML = list.map(b => {
-    // coverUrl: copertine collegate da una versione precedente dell'app, non se ne creano più
-    const cov = Covers.get(b.id) || b.coverUrl || null;
-    const cats = b.cats.map(catById).filter(Boolean);
-    const strip = cats.length
-      ? `<div class="card__strip">${cats.slice(0, 4).map(c => `<span style="background:${esc(c.color)}"></span>`).join('')}</div>` : '';
-    const badges = [
-      b.fav ? `<span class="badge badge--fav">${icon('heart-fill')}</span>` : '',
-      b.read ? `<span class="badge badge--read">${icon('book')}</span>` : '',
-      b.nope ? `<span class="badge badge--nope">${icon('heart-broken')}</span>` : ''
-    ].join('');
-    const prog = progressText(b);
-    return `<button class="card" data-id="${b.id}">
+/* una card, uguale in tutte le viste; in elenco mostra anche le categorie */
+function cardHtml(b, isList) {
+  // coverUrl: copertine collegate da una versione precedente dell'app, non se ne creano più
+  const cov = Covers.get(b.id) || b.coverUrl || null;
+  const cats = b.cats.map(catById).filter(Boolean);
+  const strip = cats.length
+    ? `<div class="card__strip">${cats.slice(0, 4).map(c => `<span style="background:${esc(c.color)}"></span>`).join('')}</div>` : '';
+  const badges = [
+    b.fav ? `<span class="badge badge--fav">${icon('heart-fill')}</span>` : '',
+    b.read ? `<span class="badge badge--read">${icon('book')}</span>` : '',
+    b.nope ? `<span class="badge badge--nope">${icon('heart-broken')}</span>` : ''
+  ].join('');
+  const prog = progressText(b);
+  return `<button class="card" data-id="${b.id}">
       <div class="card__cover" style="background:${coverGradient(b)}">
         ${cov ? `<img src="${cov}" alt="" loading="lazy">`
               : `<span class="card__ph">${icon(coverIcon(b), '')}<b class="card__init">${esc(initials(b.title))}</b></span>`}
@@ -346,7 +348,61 @@ function renderBooks() {
             `<span class="minicat" style="background:${esc(c.color)}">${esc(c.name)}</span>`).join('')}</div>` : ''}
       </div>
     </button>`;
+}
+
+function renderBooks() {
+  const list = filtered();
+  const view = state.settings.view;
+
+  $('#results').textContent = list.length
+    ? `${list.length} libr${list.length === 1 ? 'o' : 'i'}${state.books.length !== list.length ? ' su ' + state.books.length : ''}`
+    : '';
+  $('#empty').hidden = list.length > 0;
+
+  if (view === 'groups') { renderGroups(list); return; }
+
+  const wrap = $('#books');
+  const isList = view === 'list';
+  wrap.className = 'books' + (isList ? ' is-list' : '');
+  wrap.dataset.cols = isList ? 'list' : view;
+  wrap.style.setProperty('--cols', isList ? 1 : view);
+  wrap.innerHTML = list.map(b => cardHtml(b, isList)).join('');
+}
+
+/* elenco diviso per categorie: un libro in più categorie compare in ognuna,
+   nell'ordine che hai dato alle categorie; i gruppi si aprono e chiudono. */
+function renderGroups(list) {
+  const wrap = $('#books');
+  wrap.className = 'groups';
+  wrap.dataset.cols = 'groups';
+  wrap.style.removeProperty('--cols');
+
+  const chiusi = new Set(state.settings.closed || []);
+  const gruppi = state.cats.map(c => ({
+    id: c.id, name: c.name, color: c.color, icon: c.icon,
+    libri: list.filter(b => b.cats.includes(c.id))
+  }));
+  const orfani = list.filter(b => !b.cats.some(id => catById(id)));
+  if (orfani.length) gruppi.push({ id: '__senza', name: 'Senza categoria',
+    color: '#ece0f4', icon: 'cloud', libri: orfani });
+
+  const pieni = gruppi.filter(g => g.libri.length);
+  wrap.innerHTML = pieni.map(g => {
+    const closed = chiusi.has(g.id);
+    return `<section class="group${closed ? ' is-closed' : ''}" data-group="${esc(g.id)}">
+      <button type="button" class="group__head" style="background:${esc(g.color)}"
+              aria-expanded="${!closed}">
+        ${icon(g.icon, 'icon group__icon')}
+        <span class="group__name">${esc(g.name)}</span>
+        <span class="group__n">${g.libri.length}</span>
+        ${icon('chevron', 'icon group__chev')}
+      </button>
+      <div class="books is-list" data-cols="list">${g.libri.map(b => cardHtml(b, true)).join('')}</div>
+    </section>`;
   }).join('');
+
+  if (!pieni.length && list.length)
+    wrap.innerHTML = `<p class="hint hint--empty">Nessuna categoria da mostrare.</p>`;
 }
 
 function renderQuickFilters() {
@@ -552,8 +608,11 @@ function wireCatDrag() {
 
   const autoScroll = () => {
     if (!drag) return;
+    // solo quando il trascinamento è davvero partito: afferrando una riga vicino
+    // al bordo, altrimenti la lista scorrerebbe da sola a dito fermo
+    if (!drag.moved) { drag.raf = requestAnimationFrame(autoScroll); return; }
     const box = drag.scroller.getBoundingClientRect();
-    const margin = 56, speed = 9;
+    const margin = 44, speed = 9;
     if (drag.y < box.top + margin) drag.scroller.scrollTop -= speed;
     else if (drag.y > box.bottom - margin) drag.scroller.scrollTop += speed;
     drag.raf = requestAnimationFrame(autoScroll);
@@ -777,6 +836,17 @@ function wire() {
 
   /* --- libri --- */
   $('#books').addEventListener('click', e => {
+    const head = e.target.closest('.group__head');
+    if (head) {                                  // apre e chiude un gruppo, e se lo ricorda
+      const sez = head.closest('.group'), id = sez.dataset.group;
+      const chiusi = new Set(state.settings.closed || []);
+      chiusi.has(id) ? chiusi.delete(id) : chiusi.add(id);
+      state.settings.closed = [...chiusi];
+      persist();
+      sez.classList.toggle('is-closed');
+      head.setAttribute('aria-expanded', String(!sez.classList.contains('is-closed')));
+      return;
+    }
     const c = e.target.closest('.card'); if (c) openBook(c.dataset.id);
   });
   $('#btnAdd').addEventListener('click', () => openBook(null));
@@ -931,7 +1001,7 @@ function wire() {
    index.html e app.js devono venire dalla stessa pubblicazione: se la cache ne
    ha tenuto uno vecchio l'app si romperebbe, quindi si accorge del disallineamento,
    svuota la cache e ricarica una volta sola. Alzare il numero in entrambi i file. */
-const APP_VERSION = '2';
+const APP_VERSION = '3';
 
 async function ripulisciCacheVecchia() {
   try {

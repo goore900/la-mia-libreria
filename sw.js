@@ -2,7 +2,7 @@
    L'app deve funzionare offline, ma senza mai restare indietro rispetto al sito:
    quindi si prova sempre la rete e si ricade sulla copia locale solo se non c'è.
    La versione in fondo al nome della cache va alzata a ogni pubblicazione. */
-const CACHE = 'lml-v2';
+const CACHE = 'lml-v3';
 const ASSETS = [
   './',
   './index.html',
