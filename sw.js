@@ -2,7 +2,9 @@
    L'app deve funzionare offline, ma senza mai restare indietro rispetto al sito:
    quindi si prova sempre la rete e si ricade sulla copia locale solo se non c'è.
    La versione in fondo al nome della cache va alzata a ogni pubblicazione. */
-const CACHE = 'lml-v3';
+const CACHE = 'lml-v4';
+/* le copertine collegate stanno in una cache a parte: sopravvivono agli aggiornamenti */
+const COPERTINE = 'lml-copertine';
 const ASSETS = [
   './',
   './index.html',
@@ -20,7 +22,7 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE && k !== COPERTINE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -29,7 +31,20 @@ self.addEventListener('activate', e => {
    online si ha sempre l'ultima versione, offline si continua a lavorare */
 self.addEventListener('fetch', e => {
   const req = e.request;
-  if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
+  if (req.method !== 'GET') return;
+
+  /* copertine collegate da internet: prima la copia salvata, così si vedono
+     anche senza rete e non si riscaricano ogni volta */
+  if (new URL(req.url).origin !== location.origin) {
+    if (req.destination !== 'image') return;
+    e.respondWith((async () => {
+      const cache = await caches.open(COPERTINE);
+      const hit = await cache.match(req.url);
+      if (hit) return hit;
+      return fetch(req);
+    })());
+    return;
+  }
 
   e.respondWith((async () => {
     const cache = await caches.open(CACHE);
@@ -48,6 +63,7 @@ self.addEventListener('fetch', e => {
 /* la pagina può chiedere di ripulire tutto quando si accorge di file disallineati */
 self.addEventListener('message', e => {
   if (e.data === 'svuota-cache') {
-    e.waitUntil(caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))));
+    /* si butta via tutto tranne le copertine salvate dall'utente */
+    e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== COPERTINE).map(k => caches.delete(k)))));
   }
 });

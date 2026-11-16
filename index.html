@@ -15,7 +15,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="stylesheet" href="css/styles.css">
 </head>
-<body data-version="3">
+<body data-version="4">
 
 <!-- ============ Sprite icone: fiori, stelle, cuoricini ============ -->
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
@@ -346,6 +346,14 @@
           <button class="btn btn--soft" id="btnExport"><svg class="icon"><use href="#i-download"/></svg> Esporta</button>
           <label class="btn btn--soft"><svg class="icon"><use href="#i-upload"/></svg> Importa
             <input type="file" id="importInput" accept="application/json" hidden></label>
+        </div>
+      </section>
+
+      <section class="fgroup">
+        <h3 class="fgroup__title"><svg class="icon"><use href="#i-image"/></svg> Copertine collegate</h3>
+        <p class="hint" id="copHint"></p>
+        <div class="row">
+          <button class="btn btn--soft" id="btnCovSave"><svg class="icon"><use href="#i-download"/></svg> Salva sul dispositivo</button>
         </div>
       </section>
 

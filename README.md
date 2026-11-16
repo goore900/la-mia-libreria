@@ -104,6 +104,21 @@ Il trascinamento usa i Pointer Events (non il drag & drop HTML5, che sui browser
 non funziona) e la maniglia ha `touch-action: none`, così il dito sposta la riga senza far
 scorrere il pannello; avvicinandosi al bordo la lista scorre da sola.
 
+### Copertine collegate
+
+Oltre alle copertine caricate dalla galleria, un libro può avere una copertina **collegata**
+(campo `coverUrl`): l'immagine non è salvata nell'archivio, si carica da internet. Serve per
+riempire in blocco le schede senza foto, e le copertine collegate si vedono come le altre.
+
+Finché c'è rete si vedono subito. In *Impostazioni → Copertine collegate* il riquadro dice
+quanti libri ne hanno una e quante sono già salvate; **Salva sul dispositivo** le scarica
+tutte in una cache a parte (`lml-copertine`), che il service worker usa anche **offline** e
+che **non** viene svuotata dagli aggiornamenti dell'app né dalla riparazione automatica.
+Le immagini arrivano da un altro sito, che non ne autorizza la lettura da qui: si scaricano
+in modalità `no-cors` e si possono rimostrare, ma non finiscono dentro il backup `.json` —
+nel backup resta il collegamento. Se un libro ha sia una copertina caricata sia un
+collegamento, vince quella caricata.
+
 ### Backup
 
 I dati vivono solo su questo telefono: se lo cambi o cancelli i dati del browser, spariscono.

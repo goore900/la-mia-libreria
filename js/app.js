@@ -727,6 +727,75 @@ function renderStats() {
   $('#stats').innerHTML = s.map(([l, n]) =>
     `<div class="stat"><p class="stat__n">${n}</p><p class="stat__l">${l}</p></div>`).join('');
 }
+/* ---------------------------------------------- copertine collegate (online)
+   Alcuni libri hanno solo il collegamento alla copertina (coverUrl), non il file.
+   Si vedono finché c'è rete; con "Salva sul dispositivo" le immagini vengono messe
+   in una cache a parte, che il service worker usa anche offline e che non viene
+   svuotata dagli aggiornamenti dell'app. */
+const CACHE_COPERTINE = 'lml-copertine';
+
+function copertineCollegate() {
+  return state.books.filter(b => !Covers.get(b.id) && b.coverUrl).map(b => b.coverUrl);
+}
+
+async function copertineSalvate(urls) {
+  if (!('caches' in window)) return 0;
+  try {
+    const cache = await caches.open(CACHE_COPERTINE);
+    let n = 0;
+    for (const u of urls) if (await cache.match(u)) n++;
+    return n;
+  } catch { return 0; }
+}
+
+async function renderCopertine() {
+  const hint = $('#copHint'); const btn = $('#btnCovSave');
+  if (!hint) return;
+  const urls = copertineCollegate();
+  if (!urls.length) {
+    hint.textContent = 'Nessun libro con copertina collegata: le copertine che hai sono tutte già salvate qui.';
+    if (btn) btn.disabled = true;
+    return;
+  }
+  if (!('caches' in window)) {
+    hint.textContent = `${urls.length} libri hanno la copertina collegata da internet. Su questo browser non si possono salvare: si vedranno solo quando c'è rete.`;
+    if (btn) btn.disabled = true;
+    return;
+  }
+  const n = await copertineSalvate(urls);
+  hint.textContent = `${urls.length} libri hanno la copertina collegata da internet, ${n} già salvate qui. ` +
+    (n >= urls.length ? 'Si vedono anche senza rete.' : 'Salvale per vederle anche senza rete.');
+  if (btn) btn.disabled = false;
+}
+
+async function salvaCopertine() {
+  const urls = copertineCollegate();
+  const btn = $('#btnCovSave');
+  if (!urls.length || !('caches' in window)) return;
+  btn.disabled = true;
+  const testo = btn.innerHTML;
+  let fatte = 0, errori = 0;
+  try {
+    const cache = await caches.open(CACHE_COPERTINE);
+    for (let i = 0; i < urls.length; i++) {
+      btn.innerHTML = `Salvo… ${i + 1}/${urls.length}`;
+      const u = urls[i];
+      try {
+        if (await cache.match(u)) { fatte++; continue; }
+        /* no-cors: Amazon non autorizza la lettura dell'immagine da qui, ma la
+           risposta opaca si può comunque conservare e rimostrare */
+        const res = await fetch(u, { mode: 'no-cors', cache: 'no-store' });
+        await cache.put(u, res);
+        fatte++;
+      } catch { errori++; }
+    }
+  } catch { errori++; }
+  btn.innerHTML = testo;
+  btn.disabled = false;
+  toast(errori ? `Salvate ${fatte} copertine, ${errori} non riuscite` : `${fatte} copertine salvate sul dispositivo`);
+  renderCopertine();
+}
+
 function exportData() {
   const data = {
     app: 'la-mia-libreria', version: 1, exportedAt: new Date().toISOString(),
@@ -748,7 +817,7 @@ async function importData(file) {
       `Verranno sostituiti i ${state.books.length} libri attuali con i ${data.books.length} del backup.`, 'Importa')) return;
     state.books = data.books; state.cats = data.categories;
     await Covers.replaceAll(data.covers);
-    persist(); render(); renderCatList(); renderStats();
+    persist(); render(); renderCatList(); renderStats(); renderCopertine();
     toast('Backup importato');
   } catch { toast('File non valido'); }
 }
@@ -958,8 +1027,9 @@ function wire() {
   });
 
   /* --- impostazioni --- */
-  $('#btnSettings').addEventListener('click', () => { renderStats(); openSheet('sheetSettings'); });
+  $('#btnSettings').addEventListener('click', () => { renderStats(); renderCopertine(); openSheet('sheetSettings'); });
   $('#btnExport').addEventListener('click', exportData);
+  $('#btnCovSave').addEventListener('click', salvaCopertine);
   $('#importInput').addEventListener('change', e => {
     const f = e.target.files[0]; if (f) importData(f); e.target.value = '';
   });
@@ -1001,7 +1071,7 @@ function wire() {
    index.html e app.js devono venire dalla stessa pubblicazione: se la cache ne
    ha tenuto uno vecchio l'app si romperebbe, quindi si accorge del disallineamento,
    svuota la cache e ricarica una volta sola. Alzare il numero in entrambi i file. */
-const APP_VERSION = '3';
+const APP_VERSION = '4';
 
 async function ripulisciCacheVecchia() {
   try {
